@@ -3,7 +3,11 @@
 
   var STORAGE_KEY = 'midnight_agency_config_v1';
   var EVENT_NAME = 'ma:config-updated';
-  var SANTA_LINES = ['Ho ho ho!', 'Merry Christmas!'];
+  // show = text in the speech bubble, say = what the voice reads (commas make "Ho, ho, ho!" sound natural)
+  var SANTA_LINES = [
+    { show: 'Ho ho ho!', say: 'Ho, ho, ho!' },
+    { show: 'Merry Christmas!', say: 'Merry Christmas!' }
+  ];
   var greetingIdx = 0;
   var hohoTimer = null;
   var sleighActive = true;
@@ -11,9 +15,24 @@
   var sleighProgress = 0.06;
   var lastFrameTime = null;
   var sleighPath = { baseY: 74, ampY: 22, waves: 1, tilt: 3 };
+  var rafId = null;
+  var tornDown = false;
+  var chimeCtx = null;
+  var reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   function $(id) { return document.getElementById(id); }
   function rnd(n) { return Math.floor(Math.random() * n); }
+
+  // SCOPE: the snow and sleigh belong to the Pizza Parlour page (index.html) only.
+  // The page is recognised by its #pizza cover. Any other page that loads this file
+  // (GM suite, passcode gate, player dashboard...) gets nothing: no layer, no styles,
+  // no animation loop, no listeners. A page can override with <body data-ma-holiday="on|off">.
+  function inScope() {
+    var flag = document.body && document.body.getAttribute('data-ma-holiday');
+    if (flag === 'off') return false;
+    if (flag === 'on') return true;
+    return !!$('pizza');
+  }
 
   function readConfig() {
     var fallback = {
@@ -229,12 +248,17 @@
   }
 
   function stepSleigh(now) {
+    if (tornDown || !sleighActive || reduceMotion) {   // nothing to animate: stop the loop entirely
+      rafId = null;
+      lastFrameTime = null;
+      return;
+    }
     if (lastFrameTime === null) lastFrameTime = now;
     var dt = Math.min(0.1, (now - lastFrameTime) / 1000);
     lastFrameTime = now;
 
     var sleigh = $('maHolidaySleigh');
-    if (sleigh && sleighActive) {
+    if (sleigh) {
       var duration = 22 / sleighSpeedMult;
       sleighProgress += dt / duration;
       if (sleighProgress > 1) {
@@ -249,14 +273,21 @@
       var rot = -Math.cos(angle) * sleighPath.tilt;
       sleigh.style.transform = 'translate3d(' + x.toFixed(1) + 'px, ' + y.toFixed(1) + 'px, 0) rotate(' + rot.toFixed(2) + 'deg)';
     }
-    requestAnimationFrame(stepSleigh);
+    rafId = requestAnimationFrame(stepSleigh);
+  }
+
+  function startLoop() {
+    if (rafId || tornDown || !sleighActive || reduceMotion) return;
+    lastFrameTime = null;
+    rafId = requestAnimationFrame(stepSleigh);
   }
 
   function fallbackChime() {
     try {
       var AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
-      var c = new AC();
+      var c = chimeCtx || (chimeCtx = new AC());
+      if (c.state === 'suspended') c.resume();
       [587.33, 659.25, 783.99].forEach(function (freq, i) {
         var o = c.createOscillator();
         var g = c.createGain();
@@ -306,47 +337,86 @@
   }
 
   function applySettings(cfg) {
+    if (tornDown) return;
     var current = cfg || readConfig();
     var layer = ensureLayer();
     sleighActive = !!current.christmasEnabled;
     sleighSpeedMult = current.snowSpeed;
     document.body.classList.toggle('ma-holiday-active', sleighActive);
     buildSnow(layer, sleighActive ? current.snowDensity : 0, sleighSpeedMult);
+    startLoop();
+  }
+
+  var onStorage = function (e) {
+    if (e.key === STORAGE_KEY) applySettings(readConfig());
+  };
+  var onConfigEvent = function (e) {
+    applySettings((e && e.detail) || readConfig());
+  };
+
+  // Full cleanup: used when leaving the parlour for the passcode gate (index.html calls this).
+  function teardown() {
+    tornDown = true;
+    sleighActive = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    if (hohoTimer) clearTimeout(hohoTimer);
+    hohoTimer = null;
+    window.removeEventListener('storage', onStorage);
+    window.removeEventListener(EVENT_NAME, onConfigEvent);
+    var layer = $('maHolidayLayer');
+    if (layer && layer.parentNode) layer.parentNode.removeChild(layer);
+    var style = $('maHolidayStyles');
+    if (style && style.parentNode) style.parentNode.removeChild(style);
+    document.documentElement.classList.remove('ma-holiday-active');
+    if (document.body) document.body.classList.remove('ma-holiday-active');
+  }
+
+  function setEnabled(on) {
+    if (tornDown) return;
+    var cfg = readConfig();
+    cfg.christmasEnabled = !!on;
+    applySettings(cfg);
   }
 
   function init() {
-    var layer = ensureLayer();
+    if (!inScope()) {
+      // Not the Pizza Parlour page: stay completely inert, but keep the API safe to call.
+      var noop = function () {};
+      var inert = { apply: noop, read: readConfig, setEnabled: noop, teardown: noop, active: false };
+      window.HolidayOverlay = inert;
+      window.MidnightAgencyOverlay = inert;
+      return;
+    }
+    ensureLayer();
     var sleigh = $('maHolidaySleigh');
     var bubble = $('maHolidayBubble');
     if (sleigh) {
       sleigh.addEventListener('click', function (e) {
         e.stopPropagation();
-        var phrase = SANTA_LINES[greetingIdx % SANTA_LINES.length];
+        var line = SANTA_LINES[greetingIdx % SANTA_LINES.length];
         greetingIdx += 1;
-        if (bubble) bubble.textContent = phrase;
+        if (bubble) bubble.textContent = line.show;
         sleigh.classList.add('ma-speaking');
-        speakSantaLine(phrase);
+        speakSantaLine(line.say);
         if (hohoTimer) clearTimeout(hohoTimer);
         hohoTimer = setTimeout(function () {
           sleigh.classList.remove('ma-speaking');
         }, 1800);
       });
     }
-    applySettings(readConfig());
-    requestAnimationFrame(stepSleigh);
-    window.addEventListener('storage', function (e) {
-      if (e.key === STORAGE_KEY) applySettings(readConfig());
-    });
-    window.addEventListener(EVENT_NAME, function (e) {
-      applySettings((e && e.detail) || readConfig());
-    });
+    window.addEventListener('storage', onStorage);
+    window.addEventListener(EVENT_NAME, onConfigEvent);
     var api = {
       apply: applySettings,
-      read: readConfig
+      read: readConfig,
+      setEnabled: setEnabled,
+      teardown: teardown,
+      active: true
     };
     window.HolidayOverlay = api;
     window.MidnightAgencyOverlay = api;
-    void layer;
+    applySettings(readConfig());
   }
 
   if (document.readyState === 'loading') {
