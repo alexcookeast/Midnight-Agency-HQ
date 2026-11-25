@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Midnight Agency — GM Suite</title>
+<script src="../js/holiday-overlay.js" defer></script>
+<style>
+  :root {
+    --bg: #0f141f;
+    --panel: #182032;
+    --panel-alt: #202b42;
+    --deep: #090d16;
+    --border: #314163;
+    --text: #eef3ff;
+    --muted: #98a8c7;
+    --accent: #38bdf8;
+    --mint: #6bf2c8;
+    --gold: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 20px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    line-height: 1.45;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; position: relative; z-index: 25; }
+  header {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+    gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 18px;
+  }
+  h1 { margin: 0; font-size: 22px; color: var(--accent); }
+  h2 { margin: 0 0 8px; font-size: 17px; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+  }
+  label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 10px 0 4px; }
+  input[type="text"], input[type="password"], select {
+    width: 100%; background: var(--panel-alt); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; font-size: 14px;
+  }
+  input[type="range"] { width: 100%; accent-color: var(--accent); margin-top: 4px; }
+  .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  button, a.btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    border: none; border-radius: 8px; padding: 10px 14px; font-weight: 700; font-size: 14px;
+    cursor: pointer; text-decoration: none; background: var(--accent); color: #08101c;
+  }
+  button.sec, a.btn.sec { background: var(--panel-alt); color: var(--text); border: 1px solid var(--border); }
+  button.mint { background: var(--mint); color: #08101c; }
+  button.gold { background: var(--gold); color: #161105; }
+  .status {
+    margin-top: 12px; padding: 10px 12px; border-radius: 8px;
+    background: var(--deep); border: 1px solid var(--border); font-size: 13px; color: var(--mint);
+    min-height: 40px;
+  }
+  .gate-banner {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+    gap: 10px; background: var(--panel-alt); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px;
+  }
+  .locked .gm-secret { display: none; }
+  .hint-note { font-size: 12px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap locked" id="gmApp">
+  <header>
+    <div>
+      <h1>Midnight Agency — GM Suite</h1>
+      <div class="sub">Restricted GM console · Separate from Player Dashboard</div>
+    </div>
+    <div class="btns" style="margin-top:0">
+      <a class="btn sec" href="../player-dashboard.html">Player HQ</a>
+      <a class="btn sec" href="../midnight-agency-passcode.html">Passcode Gate</a>
+      <button class="sec" id="lockGmBtn" type="button">Lock GM Session</button>
+    </div>
+  </header>
+
+  <div class="gate-banner">
+    <div>GM Clearance: <strong id="gmSessionState">Locked</strong> · Clearance Key: <strong id="gmClearanceBadge">MIDNIGHT-GM</strong></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="text" id="gmLoginUser" placeholder="GM userName" autocomplete="off" style="width:140px;padding:7px 9px">
+      <input type="password" id="gmLoginCode" placeholder="GM passCode" autocomplete="off" style="width:140px;padding:7px 9px">
+      <input type="password" id="gmClearanceCode" placeholder="Clearance key" autocomplete="off" style="width:140px;padding:7px 9px">
+      <button class="gold" id="gmUnlockBtn" type="button" style="padding:8px 12px">Verify Clearance</button>
+    </div>
+  </div>
+
+  <div class="grid gm-secret">
+    <section class="panel">
+      <h2>GM Suite Credentials</h2>
+      <div class="sub">Requires GM userName, GM passCode, and clearance key.</div>
+      <label for="gmUserName">GM userName</label>
+      <input type="text" id="gmUserName" placeholder="GM userName">
+      <label for="gmPassCode">GM passCode</label>
+      <input type="password" id="gmPassCode" placeholder="GM passCode">
+      <label for="gmKeyCode">Clearance Key</label>
+      <input type="text" id="gmKeyCode" placeholder="e.g. MIDNIGHT-GM">
+      <div class="btns">
+        <button class="mint" id="saveGmCredsBtn" type="button">Save GM Credentials</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Player Dashboard Rules</h2>
+      <div class="sub">First-time players set a 4-digit passCode; codename unlocks after Rookie.</div>
+      <label for="playerRank">Player Rank</label>
+      <select id="playerRank">
+        <option value="Rookie">Rookie (No codename yet)</option>
+        <option value="Operative">Operative (Promoted — codename unlocked)</option>
+        <option value="Field Agent">Field Agent (Promoted — codename unlocked)</option>
+      </select>
+      <label for="playerUserName">Player Codename (userName)</label>
+      <input type="text" id="playerUserName" placeholder="Unlocked when promoted past Rookie">
+      <div class="hint-note" id="userNameLockNote">Rookies do not have a codename until promoted.</div>
+      <label for="playerPassCode">Player passCode (4 digits)</label>
+      <input type="text" id="playerPassCode" maxlength="4" inputmode="numeric" placeholder="4-digit passCode">
+      <div class="btns">
+        <button class="mint" id="savePlayerCredsBtn" type="button">Save Player Rules</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Holiday Overlay Config</h2>
+      <div class="sub">Controls <code>js/holiday-overlay.js</code> across pages.</div>
+      <label class="check">
+        <input type="checkbox" id="xmasEnabled">
+        Enable Christmas snow &amp; Santa sleigh
+      </label>
+      <label for="snowDensity">Snow Density (<span id="snowDensityVal">45</span>%)</label>
+      <input type="range" id="snowDensity" min="0" max="100" step="5" value="45">
+      <label for="snowSpeed">Speed (<span id="snowSpeedVal">1.0</span>x)</label>
+      <input type="range" id="snowSpeed" min="0.2" max="3.0" step="0.1" value="1.0">
+      <div class="btns">
+        <button class="gold" id="saveEnvBtn" type="button">Apply Overlay Settings</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="status" id="gmStatus">Restricted GM Suite: enter GM userName, GM passCode, and clearance key to unlock.</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var STORAGE_KEY = 'midnight_agency_config_v1';
+  var EVENT_NAME = 'ma:config-updated';
+  var unlocked = false;
+
+  function $(id) { return document.getElementById(id); }
+
+  function defaultConfig() {
+    return {
+      gm: { userName: 'GM', passCode: 'MIDNIGHT-GM', clearanceKey: 'MIDNIGHT-GM' },
+      player: { rank: 'Rookie', userName: '', passCode: '', stars: 0 },
+      passcodeToppings: ['pickles', 'olives', 'mushrooms'],
+      secretPhrase: 'pickles, olives, and mushrooms',
+      dashboardUrl: './midnight-agency-passcode.html',
+      christmasEnabled: true,
+      snowDensity: 45,
+      snowSpeed: 1.0
+    };
+  }
+
+  function readConfig() {
+    var base = defaultConfig();
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return base;
+      var parsed = JSON.parse(raw);
+      return Object.assign({}, base, parsed, {
+        gm: Object.assign({}, base.gm, parsed && parsed.gm),
+        player: Object.assign({}, base.player, parsed && parsed.player)
+      });
+    } catch (e) {
+      return base;
+    }
+  }
+
+  function writeConfig(patch) {
+    var cur = readConfig();
+    var next = Object.assign({}, cur, patch || {}, {
+      gm: Object.assign({}, cur.gm, patch && patch.gm),
+      player: Object.assign({}, cur.player, patch && patch.player)
+    });
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: next }));
+    } catch (e) {}
+    return next;
+  }
+
+  function setStatus(msg) {
+    $('gmStatus').innerHTML = msg;
+  }
+
+  function syncRankUserNameState() {
+    var isRookie = $('playerRank').value === 'Rookie';
+    $('playerUserName').disabled = isRookie;
+    if (isRookie) {
+      $('playerUserName').value = '';
+      $('userNameLockNote').textContent = 'Rookie rank: no codename assigned until promoted.';
+    } else {
+      $('userNameLockNote').textContent = 'Promoted rank: player can set or confirm a codename.';
+    }
+  }
+
+  function syncInputsFromConfig() {
+    var cfg = readConfig();
+    var rank = cfg.player.rank || 'Rookie';
+    $('gmUserName').value = cfg.gm.userName || '';
+    $('gmPassCode').value = cfg.gm.passCode || '';
+    $('gmKeyCode').value = cfg.gm.clearanceKey || 'MIDNIGHT-GM';
+    $('gmClearanceBadge').textContent = cfg.gm.clearanceKey || 'MIDNIGHT-GM';
+    $('playerRank').value = rank;
+    $('playerUserName').value = rank === 'Rookie' ? '' : (cfg.player.userName || '');
+    $('playerPassCode').value = cfg.player.passCode || '';
+    $('xmasEnabled').checked = !!cfg.christmasEnabled;
+    $('snowDensity').value = cfg.snowDensity;
+    $('snowDensityVal').textContent = cfg.snowDensity;
+    $('snowSpeed').value = Number(cfg.snowSpeed).toFixed(1);
+    $('snowSpeedVal').textContent = Number(cfg.snowSpeed).toFixed(1);
+    syncRankUserNameState();
+  }
+
+  function setUnlocked(isOpen) {
+    unlocked = !!isOpen;
+    $('gmApp').classList.toggle('locked', !unlocked);
+    $('gmSessionState').textContent = unlocked ? 'Unlocked' : 'Locked';
+  }
+
+  $('playerRank').onchange = syncRankUserNameState;
+
+  $('gmUnlockBtn').onclick = function () {
+    var cfg = readConfig();
+    var u = ($('gmLoginUser').value || '').trim();
+    var p = ($('gmLoginCode').value || '').trim();
+    var k = ($('gmClearanceCode').value || '').trim();
+    if (u === cfg.gm.userName && p === cfg.gm.passCode && k === (cfg.gm.clearanceKey || 'MIDNIGHT-GM')) {
+      setUnlocked(true);
+      $('gmLoginCode').value = '';
+      $('gmClearanceCode').value = '';
+      setStatus('Clearance verified for <strong>' + cfg.gm.userName + '</strong>.');
+    } else {
+      setUnlocked(false);
+      setStatus('Clearance check failed.');
+    }
+  };
+
+  $('lockGmBtn').onclick = function () {
+    setUnlocked(false);
+    setStatus('GM session locked.');
+  };
+
+  $('saveGmCredsBtn').onclick = function () {
+    if (!unlocked) return;
+    var u = ($('gmUserName').value || '').trim() || 'GM';
+    var p = ($('gmPassCode').value || '').trim() || 'MIDNIGHT-GM';
+    var k = ($('gmKeyCode').value || '').trim() || 'MIDNIGHT-GM';
+    writeConfig({ gm: { userName: u, passCode: p, clearanceKey: k } });
+    $('gmClearanceBadge').textContent = k;
+    setStatus('Saved GM credentials and clearance key.');
+  };
+
+  $('savePlayerCredsBtn').onclick = function () {
+    if (!unlocked) return;
+    var cur = readConfig();
+    var rank = $('playerRank').value;
+    var rawCode = ($('playerPassCode').value || '').replace(/\D/g, '').slice(0, 4);
+    $('playerPassCode').value = rawCode;
+    if (rawCode.length !== 4) {
+      setStatus('Player passCode must be 4 digits.');
+      return;
+    }
+    var u = rank === 'Rookie' ? '' : ($('playerUserName').value || '').trim();
+    var stars = rank === 'Rookie'
+      ? 0
+      : Math.max(Number((cur.player && cur.player.stars) || 0), rank === 'Field Agent' ? 5 : 2);
+    writeConfig({ player: { rank: rank, userName: u, passCode: rawCode, stars: stars } });
+    setStatus('Saved player rules for rank <strong>' + rank + '</strong>.');
+  };
+
+  $('snowDensity').oninput = function () {
+    $('snowDensityVal').textContent = this.value;
+  };
+  $('snowSpeed').oninput = function () {
+    $('snowSpeedVal').textContent = Number(this.value).toFixed(1);
+  };
+  $('saveEnvBtn').onclick = function () {
+    if (!unlocked) return;
+    writeConfig({
+      christmasEnabled: $('xmasEnabled').checked,
+      snowDensity: Number($('snowDensity').value),
+      snowSpeed: Number($('snowSpeed').value)
+    });
+    setStatus('Updated holiday overlay settings.');
+  };
+
+  syncInputsFromConfig();
+})();
+</script>
+</body>
+</html>

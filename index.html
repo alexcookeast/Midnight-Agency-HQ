@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uncle Alex's Pizza Parlour</title>
+<script src="./js/holiday-overlay.js" defer></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #FFF4E0;
+    color: #3A1F10;
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.45;
+  }
+  .pz-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background: #FFF4E0;
+    color: #3A1F10;
+  }
+  .pz-top {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 10px 18px;
+    border-bottom: 3px double #B8260F;
+    background: #FFF4E0;
+  }
+  .pz-head { display: flex; align-items: center; gap: 12px; }
+  .pz-name { font-size: 28px; font-weight: 700; color: #B8260F; line-height: 1; }
+  .pz-sub { font-size: 14px; letter-spacing: 4px; font-weight: 700; }
+  .pz-est { font-size: 12px; font-style: italic; color: #7a5a46; margin-top: 2px; }
+  .pz-call {
+    flex: none;
+    min-height: 48px;
+    min-width: 140px;
+    border: none;
+    border-radius: 10px;
+    background: #B8260F;
+    color: #fff;
+    padding: 6px 16px;
+    text-align: center;
+    cursor: pointer;
+    font-family: system-ui, Arial, sans-serif;
+  }
+  .pz-call b { display: block; font-size: 16px; }
+  .pz-call span { display: block; font-size: 13px; opacity: .9; }
+  .pz-call:active { background: #8E1D0B; }
+
+  .pz-main { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+  .pz-menu {
+    flex: 1.5;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 18px 28px;
+  }
+  .pz-order {
+    flex: 1;
+    min-width: 280px;
+    max-width: 440px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-left: 4px double #B8260F;
+    background: #FFF4E0;
+    padding: 12px 16px 16px;
+  }
+
+  h2 {
+    font-size: 22px;
+    color: #B8260F;
+    border-bottom: 3px double #B8260F;
+    padding-bottom: 4px;
+    margin: 20px 0 8px;
+  }
+  h3 {
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin: 16px 0 4px;
+    color: #2F7D3A;
+  }
+  .pz-banner {
+    margin: 12px 0;
+    border: 2px dashed #2F7D3A;
+    color: #2F7D3A;
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+    font-weight: 700;
+  }
+  .pz-hint { font-size: 14px; margin-bottom: 6px; }
+  .pz-foot {
+    margin-top: 24px;
+    font: 12px/1.5 system-ui, Arial, sans-serif;
+    color: #7a5a46;
+    text-align: center;
+  }
+
+  .pz-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    padding: 8px 0;
+    border-bottom: 1px dotted #c8a98d;
+  }
+  .pz-nm { flex: 1 1 180px; min-width: 0; }
+  .pz-item b { display: block; font-size: 17px; }
+  .pz-item small { color: #7a5a46; font-size: 14px; }
+  .pz-price { white-space: nowrap; font: 700 15px system-ui, Arial, sans-serif; }
+  .pz-ctl { display: flex; align-items: center; gap: 10px; }
+  .pz-ctl .pz-price { min-width: 62px; text-align: right; }
+
+  .pz-sb { display: flex; align-items: center; gap: 6px; }
+  .pz-sb button {
+    width: 40px; height: 40px; min-width: 40px; min-height: 40px; padding: 0;
+    border: none; border-radius: 6px; background: #B8260F; color: #fff;
+    font: 700 24px/1 system-ui, Arial, sans-serif; cursor: pointer;
+  }
+  .pz-sb button:active { background: #8E1D0B; }
+  .pz-sb .pz-q {
+    min-width: 26px; text-align: center;
+    font: 700 18px system-ui, Arial, sans-serif; color: #3A1F10;
+  }
+
+  .pz-size { display: flex; gap: 4px; }
+  .pz-sz {
+    min-width: 44px; min-height: 40px; padding: 0 8px;
+    border: 2px solid #B8260F; border-radius: 6px; background: #fff; color: #B8260F;
+    font: 700 14px system-ui, Arial, sans-serif; cursor: pointer;
+  }
+  .pz-sz.on { background: #B8260F; color: #fff; }
+
+  .pz-tops { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
+  .pz-tp {
+    min-height: 44px; padding: 0 14px;
+    border: 2px solid #B8260F; border-radius: 6px; background: #fff; color: #B8260F;
+    font: 700 15px system-ui, Arial, sans-serif; cursor: pointer;
+  }
+  .pz-tp.on { background: #B8260F; color: #fff; }
+
+  .pz-ohead {
+    flex: none;
+    display: flex; justify-content: space-between;
+    font-size: 18px; color: #B8260F; margin-bottom: 6px;
+  }
+  .pz-lines { flex: 1; min-height: 40px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .pz-tl {
+    display: flex; justify-content: space-between; gap: 10px;
+    font: 15px system-ui, Arial, sans-serif; padding: 2px 0;
+  }
+  .pz-tl.muted { color: #7a5a46; }
+  .pz-tl.sub { border-top: 1px dotted #c8a98d; margin-top: 4px; padding-top: 4px; }
+  .pz-tl.tot {
+    font-weight: 800; font-size: 17px;
+    border-top: 2px solid #3A1F10; margin-top: 4px; padding-top: 4px;
+  }
+  .pz-msg {
+    flex: none;
+    display: none; background: #fff; border: 2px solid #2F7D3A; border-radius: 12px;
+    padding: 12px; margin-top: 8px; font: 15px/1.4 system-ui, Arial, sans-serif;
+  }
+  .pz-msg a { color: #2F7D3A; font-weight: 800; }
+  .pz-btns { flex: none; display: flex; gap: 10px; margin-top: 10px; }
+  .pz-btns button {
+    min-height: 54px; border-radius: 12px;
+    font: 700 17px system-ui, Arial, sans-serif; cursor: pointer;
+  }
+  .pz-clear { padding: 0 20px; border: 2px solid #B8260F; background: #fff; color: #B8260F; }
+  .pz-go { flex: 1; border: none; background: #B8260F; color: #fff; }
+
+  .ma-holiday-active .pz-shell {
+    background: linear-gradient(180deg, #FFF7E8 0%, #FFF4E0 65%, #F8EFE0 100%);
+  }
+  .ma-holiday-active .pz-top {
+    background: linear-gradient(90deg, #FFF4E0 0%, #FFF9EE 50%, #FFF4E0 100%);
+    border-bottom-color: #2F7D3A;
+  }
+  .ma-holiday-active .pz-banner {
+    border-style: solid;
+    border-color: #B8260F;
+    background: rgba(255, 255, 255, 0.72);
+    color: #B8260F;
+  }
+
+  /* Phone Call Modal */
+  #avPhoneModal {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(10, 14, 24, 0.78); align-items: center; justify-content: center; padding: 16px;
+  }
+  #avPhoneModal.open { display: flex; }
+  .ph-box {
+    width: 100%; max-width: 440px; background: #FFF4E0; color: #3A1F10;
+    border: 4px double #B8260F; border-radius: 16px; padding: 18px;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.45); font-family: Georgia, serif;
+  }
+  .ph-top { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #B8260F; padding-bottom: 8px; }
+  .ph-title { font-size: 19px; font-weight: 700; color: #B8260F; }
+  .ph-screen {
+    margin: 12px 0; background: #fff; border: 2px solid #c8a98d; border-radius: 10px;
+    padding: 12px; font-family: system-ui, sans-serif; font-size: 15px; min-height: 76px;
+  }
+  .ph-who { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #2F7D3A; letter-spacing: 1px; }
+  .ph-heard { font-size: 13px; color: #7a5a46; margin-top: 6px; font-style: italic; }
+  .ph-actions { display: flex; flex-direction: column; gap: 8px; font-family: system-ui, sans-serif; }
+  .ph-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ph-chip {
+    background: #fff; color: #B8260F; border: 2px solid #B8260F; border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .ph-gate-btn {
+    display: none; width: 100%; border: none; border-radius: 10px;
+    padding: 11px 14px; background: #2F7D3A; color: #fff;
+    font-size: 14px; font-weight: 800; cursor: pointer; text-align: center;
+  }
+  .ph-gate-btn.on { display: block; }
+
+  @media (orientation: portrait), (max-width: 700px) {
+    .pz-main { flex-direction: column; }
+    .pz-order {
+      flex: none; max-width: none; min-width: 0; max-height: 44vh;
+      border-left: 0; border-top: 4px double #B8260F;
+      box-shadow: 0 -6px 14px rgba(58,31,16,.18);
+    }
+  }
+</style>
+</head>
+<body>
+<div class="pz-shell" id="pizza" role="region" aria-label="Uncle Alex's Pizza Parlour">
+  <header class="pz-top">
+    <div class="pz-head">
+      <svg width="60" height="60" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="30" fill="#B8260F" stroke="#FFF4E0" stroke-width="3"/>
+        <path d="M13 21 Q32 7 51 21 L32 55 Z" fill="#FFC857" stroke="#F0A830" stroke-width="2"/>
+        <path d="M13 21 Q32 7 51 21" fill="none" stroke="#C97A1E" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="26" cy="25" r="3.2" fill="#B8260F"/><circle cx="38" cy="25" r="3.2" fill="#B8260F"/><circle cx="32" cy="46" r="3" fill="#B8260F"/>
+        <circle cx="27" cy="31" r="2.4" fill="#3A1F10"/><circle cx="37" cy="31" r="2.4" fill="#3A1F10"/>
+        <path d="M19 40 Q26 33 32 39 Q38 33 45 40 Q38 46 32 41 Q26 46 19 40Z" fill="#3A1F10"/>
+      </svg>
+      <div>
+        <div class="pz-name">Uncle Alex's</div>
+        <div class="pz-sub">PIZZA PARLOUR</div>
+        <div class="pz-est">Family owned since 1987 &middot; Saint John, NB</div>
+      </div>
+    </div>
+    <button class="pz-call" id="callBtn" type="button" aria-label="Call Parlour, (506) 555-0142">
+      <b>Call Parlour</b><span>(506) 555-0142</span>
+    </button>
+  </header>
+
+  <div class="pz-main">
+    <section class="pz-menu" id="pzMenuCol" aria-label="Menu">
+      <div class="pz-banner">Tuesday Special: two medium pepperoni pizzas for $19.99. Free delivery on orders over $25.</div>
+      <h2>Our Menu</h2>
+      <div class="pz-hint">Tap + to add to your order. Your tally is on the order panel.</div>
+      <div id="pzMenu"></div>
+
+      <h2>Hours &amp; Location</h2>
+      <div class="pz-item"><div class="pz-nm"><b>Monday to Thursday</b></div><div class="pz-price">11 am - 9 pm</div></div>
+      <div class="pz-item"><div class="pz-nm"><b>Friday and Saturday</b></div><div class="pz-price">11 am - 11 pm</div></div>
+      <div class="pz-item"><div class="pz-nm"><b>Sunday</b></div><div class="pz-price">12 pm - 9 pm</div></div>
+      <div class="pz-item"><div class="pz-nm"><b>Find us</b><small>88 Moonlight Lane, Saint John NB</small></div><div class="pz-price">(506) 555-0142</div></div>
+      <div class="pz-foot">&copy; 1987-2026 Uncle Alex's Pizza Parlour. Cash, debit and credit accepted.<br>Prices and menu may change without notice. HST (15%) added to all orders.</div>
+    </section>
+
+    <aside class="pz-order" aria-label="Your order">
+      <div class="pz-ohead"><b>Your order</b><span id="pzCount">0 items</span></div>
+      <div class="pz-lines" id="pzTally"></div>
+      <div class="pz-msg" id="pizzaMsg" role="status"></div>
+      <div class="pz-btns">
+        <button class="pz-clear" id="clearBtn" type="button">Clear</button>
+        <button class="pz-go" id="orderBtn" type="button">Place my order</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="avPhoneModal" role="dialog" aria-modal="true" aria-label="Call Pizza Parlour">
+  <div class="ph-box">
+    <div class="ph-top">
+      <div class="ph-title">Pizza Parlour Line 1</div>
+      <button class="ph-chip" id="phHangup" type="button" style="background:#B8260F;color:#fff;border-color:#B8260F">Hang Up</button>
+    </div>
+    <div class="ph-screen">
+      <div class="ph-who" id="phWho">Connecting</div>
+      <div id="phLine" style="margin-top:4px">Ringing (506) 555-0142.</div>
+      <div class="ph-heard" id="phHeard"></div>
+    </div>
+    <div class="ph-actions">
+      <button class="ph-gate-btn" id="phGateBtn" type="button">Proceed to Agent Passcode Gate &rarr;</button>
+      <button class="ph-chip" id="phListenBtn" type="button" style="background:#2F7D3A;color:#fff;border-color:#2F7D3A">Tap to Speak Pizza Order (Mic)</button>
+      <div style="font-size:12px;color:#7a5a46;text-align:center">Or select a quick pizza reply below:</div>
+      <div class="ph-chips">
+        <button class="ph-chip" type="button" data-say="One large pepperoni pizza">One Large Pepperoni</button>
+        <button class="ph-chip" type="button" data-say="Pickles, olives, and mushrooms">Pickles, Olives, and Mushrooms</button>
+        <button class="ph-chip" type="button" data-say="Two medium pepperoni pizzas and garlic fingers">Tuesday Special &amp; Garlic Fingers</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'midnight_agency_config_v1';
+  var PASSCODE_URL = './midnight-agency-passcode.html';
+  var HST = 0.15;
+  var PHONE = '(506) 555-0142';
+  var TOPS = ['pepperoni','pickles','olives','cheese','mushrooms','pineapple','bacon','onions','anchovies','hamburger','green peppers','jalapenos'];
+  var MENU = [
+    {g:'Pizzas', sub:'SM = 12 inch, LG = 16 inch', sizes:true, items:[
+      {id:'marg', n:'Margherita',        d:'Tomato, mozzarella, fresh basil',            p:[1299,1799]},
+      {id:'pep',  n:'Pepperoni Classic', d:'Pepperoni and mozzarella',                   p:[1399,1899]},
+      {id:'haw',  n:'Hawaiian',          d:'Ham, pineapple, mozzarella',                 p:[1449,1949]},
+      {id:'veg',  n:'Garden Veggie',     d:'Peppers, mushrooms, olives, onion',          p:[1449,1949]},
+      {id:'meat', n:"Meat Lover's",      d:'Pepperoni, sausage, bacon, ham',             p:[1599,2149]},
+      {id:'don',  n:'Donair Pizza',      d:'Donair meat, tomato, onion, sweet sauce',    p:[1549,2099]},
+      {id:'plain',n:'Plain Cheese',      d:'Build it your way with toppings below',      p:[1099,1499]}]},
+    {g:'Sides', items:[
+      {id:'gf', n:'Garlic Fingers',      d:'Cheesy, with dipping sauce',                 p:[799]},
+      {id:'cs', n:'Caesar Salad',        d:'',                                           p:[649]},
+      {id:'wg', n:'Chicken Wings (10)',  d:'Plain, BBQ or honey garlic',                 p:[1299]}]},
+    {g:'Drinks', items:[
+      {id:'pop',n:'Pop',                 d:'Can',                                        p:[200]},
+      {id:'rbf',n:'Root Beer Float',     d:'',                                           p:[450]},
+      {id:'wat',n:'Bottled Water',       d:'',                                           p:[150]}]},
+    {g:'Extra toppings', sub:'$1.25 each, tap to add or remove', toppings:true, items:TOPS.map(function(t){
+      var label = t.replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+      return {id:'top_'+t, n:label, d:'', p:[125]}; })}
+  ];
+  var BYID = {};
+  MENU.forEach(function(g){ g.items.forEach(function(it){
+    it.sizes = !!g.sizes; it.top = !!g.toppings; BYID[it.id] = it;
+  }); });
+
+  function $(id){ return document.getElementById(id); }
+  function rnd(n){ return Math.floor(Math.random()*n); }
+  function money(c){ return '$'+(c/100).toFixed(2); }
+
+  function readSharedConfig() {
+    var fallback = {
+      passcodeToppings: ['pickles', 'olives', 'mushrooms'],
+      secretPhrase: 'pickles, olives, and mushrooms',
+      dashboardUrl: PASSCODE_URL,
+      player: { rank: 'Rookie', userName: '', passCode: '', stars: 0 },
+      npcs: {},
+      christmasEnabled: true,
+      snowDensity: 45,
+      snowSpeed: 1.0
+    };
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return fallback;
+      var parsed = JSON.parse(raw);
+      return Object.assign({}, fallback, parsed, {
+        player: Object.assign({}, fallback.player, parsed && parsed.player),
+        npcs: Object.assign({}, fallback.npcs, parsed && parsed.npcs)
+      });
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function teardownHolidayCover() {
+    try {
+      if (window.HolidayOverlay && typeof window.HolidayOverlay.teardown === 'function') {
+        window.HolidayOverlay.teardown();
+      } else if (window.HolidayOverlay && typeof window.HolidayOverlay.setEnabled === 'function') {
+        window.HolidayOverlay.setEnabled(false);
+      }
+      document.documentElement.classList.remove('ma-holiday-active');
+      document.body.classList.remove('ma-holiday-active');
+    } catch (e) {}
+  }
+
+  function goToPasscodeGate() {
+    teardownHolidayCover();
+    var cfg = readSharedConfig();
+    var target = cfg.dashboardUrl || PASSCODE_URL;
+    if (target === './player-dashboard.html') target = PASSCODE_URL;
+    window.location.href = target;
+  }
+
+  // ---- Menu & Order Tally ----
+  var cart = {};
+  var sizeSel = {};
+  var actx = null;
+
+  function curSize(id){ return sizeSel[id] || 0; }
+  function curKey(id){ return id+'|'+curSize(id); }
+
+  function audio(){
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    actx = actx || new AC();
+    if(actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+
+  function beep(freq, dur){
+    try{
+      var c=audio(); if(!c) return;
+      var o=c.createOscillator(), g=c.createGain();
+      o.type='sine'; o.frequency.value=freq; g.gain.value=0.05;
+      o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+(dur||0.12));
+    }catch(e){}
+  }
+
+  function cartLines(){
+    var lines=[], sub=0;
+    MENU.forEach(function(g){ g.items.forEach(function(it){ it.p.forEach(function(price,si){
+      var q = cart[it.id+'|'+si] || 0; if(!q) return;
+      lines.push({n: it.n + (g.sizes ? (si===0 ? ' (12")' : ' (16")') : ''), q:q, t:q*price});
+      sub += q*price;
+    }); }); });
+    return {lines:lines, sub:sub};
+  }
+
+  function drawTally(){
+    var t=cartLines(), tax=Math.round(t.sub*HST), h='';
+    if(!t.lines.length) h='<div class="pz-tl muted">Your order is empty. Tap + to add items.</div>';
+    else {
+      t.lines.forEach(function(l){ h+='<div class="pz-tl"><span>'+l.q+' × '+l.n+'</span><span>'+money(l.t)+'</span></div>'; });
+      h+='<div class="pz-tl sub"><span>Subtotal</span><span>'+money(t.sub)+'</span></div>'
+       + '<div class="pz-tl"><span>HST (15%)</span><span>'+money(tax)+'</span></div>'
+       + '<div class="pz-tl tot"><span>Total</span><span>'+money(t.sub+tax)+'</span></div>';
+    }
+    $('pzTally').innerHTML=h;
+    var n=0; Object.keys(cart).forEach(function(k){ n+=cart[k]; });
+    $('pzCount').textContent=n+' item'+(n===1?'':'s');
+  }
+
+  function hideMsg(){ $('pizzaMsg').style.display='none'; }
+  function showMsg(html){ var m=$('pizzaMsg'); m.innerHTML=html; m.style.display='block'; }
+
+  function syncItem(id){
+    var it=BYID[id], v=cart[curKey(id)]||0, i;
+    if(it.top){
+      var t=$('t_'+id); t.className='pz-tp'+(v?' on':''); t.setAttribute('aria-pressed', v?'true':'false');
+      return;
+    }
+    $('q_'+id).textContent=v;
+    $('p_'+id).textContent=money(it.p[curSize(id)]);
+    if(it.sizes){
+      var b=$('s_'+id).querySelectorAll('button');
+      for(i=0;i<b.length;i++){
+        var on = (+b[i].getAttribute('data-s'))===curSize(id);
+        b[i].className='pz-sz'+(on?' on':''); b[i].setAttribute('aria-pressed', on?'true':'false');
+      }
+    }
+  }
+  function syncUI(){ Object.keys(BYID).forEach(syncItem); }
+  function resetCart(){ cart={}; sizeSel={}; syncUI(); drawTally(); }
+  function setQty(key,v){ if(v) cart[key]=v; else delete cart[key]; }
+
+  function stepperHTML(it){
+    return '<div class="pz-sb">'
+      + '<button type="button" class="pz-st" data-id="'+it.id+'" data-d="-1" aria-label="Remove one '+it.n+'">−</button>'
+      + '<span class="pz-q" id="q_'+it.id+'" aria-live="polite">0</span>'
+      + '<button type="button" class="pz-st" data-id="'+it.id+'" data-d="1" aria-label="Add one '+it.n+'">+</button></div>';
+  }
+
+  function buildMenu(){
+    var h='';
+    MENU.forEach(function(g){
+      h+='<h3>'+g.g+(g.sub?' <small style="letter-spacing:0;text-transform:none;color:#7a5a46">('+g.sub+')</small>':'')+'</h3>';
+      if(g.toppings){
+        h+='<div class="pz-tops">';
+        g.items.forEach(function(it){
+          h+='<button type="button" class="pz-tp" id="t_'+it.id+'" data-id="'+it.id+'" aria-pressed="false">'+it.n+'</button>';
+        });
+        h+='</div>';
+        return;
+      }
+      g.items.forEach(function(it){
+        h+='<div class="pz-item"><div class="pz-nm"><b>'+it.n+'</b>'+(it.d?'<small>'+it.d+'</small>':'')+'</div><div class="pz-ctl">';
+        if(g.sizes){
+          h+='<div class="pz-size" id="s_'+it.id+'" role="group" aria-label="Size for '+it.n+'">'
+           + '<button type="button" class="pz-sz on" data-id="'+it.id+'" data-s="0" aria-pressed="true">SM</button>'
+           + '<button type="button" class="pz-sz" data-id="'+it.id+'" data-s="1" aria-pressed="false">LG</button></div>';
+        }
+        h+='<span class="pz-price" id="p_'+it.id+'"></span>'+stepperHTML(it)+'</div></div>';
+      });
+    });
+    $('pzMenu').innerHTML=h;
+
+    var i, b;
+    b=$('pzMenu').querySelectorAll('.pz-st');
+    for(i=0;i<b.length;i++){ b[i].onclick=function(){
+      var id=this.getAttribute('data-id'), d=+this.getAttribute('data-d'), k=curKey(id);
+      setQty(k, Math.max(0, Math.min(20, (cart[k]||0)+d)));
+      syncItem(id); drawTally(); hideMsg(); beep(d>0?520:380,.04);
+    }; }
+    b=$('pzMenu').querySelectorAll('.pz-sz');
+    for(i=0;i<b.length;i++){ b[i].onclick=function(){
+      var id=this.getAttribute('data-id'); sizeSel[id]=+this.getAttribute('data-s');
+      syncItem(id); beep(450,.04);
+    }; }
+    b=$('pzMenu').querySelectorAll('.pz-tp');
+    for(i=0;i<b.length;i++){ b[i].onclick=function(){
+      var id=this.getAttribute('data-id'), k=id+'|0', on=!cart[k];
+      setQty(k, on?1:0);
+      syncItem(id); drawTally(); hideMsg(); beep(on?520:380,.04);
+    }; }
+    syncUI(); drawTally();
+  }
+
+  function isSecretOrder() {
+    var cfg = readSharedConfig();
+    var reqToppings = Array.isArray(cfg.passcodeToppings) && cfg.passcodeToppings.length
+      ? cfg.passcodeToppings.map(function (t) { return String(t).toLowerCase().trim(); })
+      : ['pickles', 'olives', 'mushrooms'];
+
+    var activeKeys = Object.keys(cart).filter(function (k) { return cart[k] > 0; });
+    var selectedTops = activeKeys
+      .filter(function (k) { return k.indexOf('top_') === 0; })
+      .map(function (k) { return k.replace('top_', '').split('|')[0].toLowerCase(); });
+
+    var nonTops = activeKeys.filter(function (k) { return k.indexOf('top_') !== 0; });
+    if (nonTops.length > 0) return false;
+    if (selectedTops.length !== reqToppings.length) return false;
+
+    return reqToppings.every(function (t) {
+      return selectedTops.indexOf(t) !== -1 && cart['top_' + t + '|0'] === 1;
+    });
+  }
+
+  $('orderBtn').onclick=function(){
+    var t=cartLines();
+    if(!t.lines.length){ showMsg('Your order is empty. Tap + next to the items you want.'); return; }
+    if(isSecretOrder()){
+      beep(660,.08);
+      showMsg('<b>Special order noted.</b> Opening <a href="'+PASSCODE_URL+'">Agent Passcode Gate</a>...');
+      setTimeout(goToPasscodeGate, 350);
+      return;
+    }
+    var tax=Math.round(t.sub*HST);
+    showMsg('<b>Thank you! Order #'+(1000+rnd(900))+' received.</b><br>'
+      + t.lines.map(function(l){ return l.q+' × '+l.n; }).join('<br>')
+      + '<br><b>Total: '+money(t.sub+tax)+'</b><br>Ready for pickup in about 25 minutes.');
+    resetCart();
+  };
+
+  $('clearBtn').onclick=function(){ resetCart(); hideMsg(); };
+
+  // ---- DTMF, Ring Cadence & GM-Configurable NPC Voice Engine ----
+  var activeDualNodes = [];
+  var activeFoleyNodes = [];
+  var timers = [];
+  var recog = null;
+  var voices = [];
+  var speakGen = 0;
+  var roleState = {};
+  var QUICK_REDIAL_MS = 30000;
+
+  var DTMF = {
+    '1': [697, 1209], '2': [697, 1336], '3': [697, 1477],
+    '4': [770, 1209], '5': [770, 1336], '6': [770, 1477],
+    '7': [852, 1209], '8': [852, 1336], '9': [852, 1477],
+    '*': [941, 1209], '0': [941, 1336], '#': [941, 1477]
+  };
+
+  function clearTimers() {
+    while (timers.length) clearTimeout(timers.shift());
+  }
+
+  function stopAudioOnly() {
+    clearTimers();
+    while (activeDualNodes.length) {
+      var item = activeDualNodes.pop();
+      try { item.osc1.stop(); item.osc2.stop(); item.gain.disconnect(); } catch (e) {}
+    }
+    while (activeFoleyNodes.length) {
+      var f = activeFoleyNodes.pop();
+      try { f.osc.stop(); f.gain.disconnect(); } catch (e) {}
+    }
+    if ('speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+  }
+
+  function startDualTone(f1, f2, peakGain) {
+    var c = audio();
+    if (!c) return function () {};
+    var now = c.currentTime;
+    var osc1 = c.createOscillator();
+    var osc2 = c.createOscillator();
+    var gain = c.createGain();
+    osc1.type = 'sine'; osc2.type = 'sine';
+    osc1.frequency.setValueAtTime(f1, now);
+    osc2.frequency.setValueAtTime(f2, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(peakGain || 0.12, now + 0.006);
+    osc1.connect(gain); osc2.connect(gain); gain.connect(c.destination);
+    osc1.start(now); osc2.start(now);
+
+    var entry = { osc1: osc1, osc2: osc2, gain: gain };
+    activeDualNodes.push(entry);
+
+    return function stopThis(fadeSec) {
+      var t0 = c.currentTime;
+      var fade = fadeSec || 0.006;
+      try {
+        gain.gain.cancelScheduledValues(t0);
+        gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), t0);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + fade);
+        osc1.stop(t0 + fade + 0.008);
+        osc2.stop(t0 + fade + 0.008);
+      } catch (e) {}
+      var idx = activeDualNodes.indexOf(entry);
+      if (idx !== -1) activeDualNodes.splice(idx, 1);
+    };
+  }
+
+  function dialDTMF(digits, toneSec, gapSec, onDone) {
+    var c = audio();
+    var clean = String(digits || '').replace(/[^0-9*#]/g, '');
+    if (!c || !clean.length) { if (typeof onDone === 'function') onDone(); return; }
+    var tDur = toneSec || 0.065;
+    var gDur = gapSec || 0.035;
+    var cursor = c.currentTime + 0.02;
+
+    for (var i = 0; i < clean.length; i++) {
+      var pair = DTMF[clean[i]];
+      if (!pair) continue;
+      var osc1 = c.createOscillator();
+      var osc2 = c.createOscillator();
+      var gain = c.createGain();
+      osc1.type = 'sine'; osc2.type = 'sine';
+      osc1.frequency.setValueAtTime(pair[0], cursor);
+      osc2.frequency.setValueAtTime(pair[1], cursor);
+      gain.gain.setValueAtTime(0.0001, cursor);
+      gain.gain.linearRampToValueAtTime(0.12, cursor + 0.004);
+      gain.gain.setValueAtTime(0.12, cursor + Math.max(0.005, tDur - 0.005));
+      gain.gain.exponentialRampToValueAtTime(0.0001, cursor + tDur);
+      osc1.connect(gain); osc2.connect(gain); gain.connect(c.destination);
+      osc1.start(cursor); osc2.start(cursor);
+      osc1.stop(cursor + tDur + 0.005); osc2.stop(cursor + tDur + 0.005);
+      cursor += (tDur + gDur);
+    }
+
+    var ms = Math.max(50, Math.round((cursor - c.currentTime + 0.05) * 1000));
+    timers.push(setTimeout(function () { if (typeof onDone === 'function') onDone(); }, ms));
+  }
+
+  function playRingCadence(ringCount, onStep, onComplete) {
+    if (ringCount <= 0) { if (typeof onComplete === 'function') onComplete(); return; }
+    var current = 0;
+    function oneCycle() {
+      current++;
+      var stopRing = startDualTone(440, 480, 0.14);
+      if (typeof onStep === 'function') onStep('Ringing (' + current + ' of ' + ringCount + ')...');
+      timers.push(setTimeout(function () {
+        stopRing(0.015);
+        if (current >= ringCount) {
+          if (typeof onComplete === 'function') onComplete();
+          return;
+        }
+        if (typeof onStep === 'function') onStep('Ringing... pause before ring ' + (current + 1) + '.');
+        timers.push(setTimeout(oneCycle, 1800));
+      }, 1300));
+    }
+    oneCycle();
+  }
+
+  function playPhoneBeep() {
+    var c = audio();
+    if (!c) return;
+    var now = c.currentTime;
+    var o = c.createOscillator();
+    var g = c.createGain();
+    o.type = 'sine';
+    o.frequency.value = 587.33;
+    g.gain.setValueAtTime(0.05, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+    o.connect(g); g.connect(c.destination);
+    var entry = { osc: o, gain: g };
+    activeFoleyNodes.push(entry);
+    o.onended = function () { var i = activeFoleyNodes.indexOf(entry); if (i !== -1) activeFoleyNodes.splice(i, 1); };
+    o.start(now); o.stop(now + 0.15);
+  }
+
+  function playRadioChime() {
+    var c = audio();
+    if (!c) return;
+    var now = c.currentTime;
+    [523.25, 659.25, 783.99].forEach(function (f, i) {
+      var o = c.createOscillator();
+      var g = c.createGain();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.045, now + i * 0.09);
+      g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.22);
+      o.connect(g); g.connect(c.destination);
+      var entry = { osc: o, gain: g };
+      activeFoleyNodes.push(entry);
+      o.onended = function () { var i2 = activeFoleyNodes.indexOf(entry); if (i2 !== -1) activeFoleyNodes.splice(i2, 1); };
+      o.start(now + i * 0.09); o.stop(now + i * 0.09 + 0.24);
+    });
+  }
+
+  var DEFAULT_NPCS = {
+    waitress: {
+      name: 'Waitress',
+      number: '5065550142',
+      voiceName: '',
+      lang: 'en',
+      pitch: 1.0,
+      rate: 0.98,
+      volume: 1.0,
+      voicemailChance: 0.2,
+      foley: 'beep',
+      prefer: ['aria', 'jenny', 'sonia', 'natasha', 'libby', 'samantha', 'allison', 'zira', 'google us english'],
+      scripts: {
+        greeting: 'Uncle Alex\'s Pizza Parlour, what will it be?',
+        nearPhone: 'Uncle Alex\'s, go ahead.',
+        ranToPhone: 'Sorry, I was out back. What can I get you?',
+        voicemail: 'You have reached Uncle Alex\'s Pizza Parlour. Leave your pizza order and size after the tone.',
+        secretConfirm: 'Got it, I\'ll put that right through for you.',
+        normalReply: 'Sure thing. Would you like any sides, drinks, or extra toppings with that?'
+      }
+    },
+    chef: {
+      name: 'Chef',
+      number: '5065550142',
+      voiceName: '',
+      lang: 'en',
+      pitch: 0.95,
+      rate: 0.96,
+      volume: 1.0,
+      voicemailChance: 0.2,
+      foley: 'beep',
+      prefer: ['guy', 'ryan', 'davis', 'william', 'daniel', 'david', 'google uk english male'],
+      scripts: {
+        greeting: 'Uncle Alex\'s Pizza Parlour. What can I get for you?',
+        nearPhone: 'Fresh pizza! What will it be?',
+        ranToPhone: 'Sorry. Stepped away from the ovens for a sec. What pizza are we making?',
+        voicemail: 'You have reached the pizza parlour kitchen line. Leave your pizza or topping order after the tone.',
+        secretConfirm: 'Special toppings. Got it.',
+        normalReply: 'Heard you loud and clear. Want extra cheese or garlic fingers on that?'
+      }
+    },
+    chief: {
+      name: 'The Chief',
+      number: '5065550142',
+      voiceName: '',
+      lang: 'en',
+      pitch: 0.95,
+      rate: 0.97,
+      volume: 1.0,
+      voicemailChance: 0,
+      foley: 'chime',
+      prefer: ['ryan', 'guy', 'daniel', 'arthur', 'david', 'uk english'],
+      scripts: {
+        greeting: 'Order confirmed on the board. Heading to the passcode gate now.',
+        nearPhone: 'Line is clear. State your order or head to the passcode gate.',
+        ranToPhone: 'Line is active. Keep it brief. What is the order?',
+        voicemail: 'Field office line is unavailable. Leave your code word.',
+        secretConfirm: 'Confirmed. Opening the passcode gate.',
+        normalReply: 'Noted. Let me know if you need anything else.'
+      }
+    },
+    santa: {
+      name: 'Santa',
+      number: '5065550142',
+      voiceName: '',
+      lang: 'en',
+      pitch: 0.9,
+      rate: 0.92,
+      volume: 1.0,
+      voicemailChance: 0,
+      foley: 'chime',
+      prefer: ['davis', 'william', 'guy', 'daniel', 'david', 'arthur'],
+      scripts: {
+        greeting: 'Ho, ho, ho! Even up north we love a hot pizza from Uncle Alex\'s.',
+        nearPhone: 'Right by the sleigh bell! What are we ordering tonight?',
+        ranToPhone: 'Reindeer were getting restless, so make it quick! What are we ordering?',
+        voicemail: 'Santa and the elves are out checking the list. Leave a message after the chime.',
+        secretConfirm: 'That secret order made the nice list. Onward to the passcode gate!',
+        normalReply: 'Sounds delicious! Make sure to save a slice for the workshop.'
+      }
+    }
+  };
+
+  function getNpcConfig(npcId) {
+    var key = npcId || 'waitress';
+    var base = DEFAULT_NPCS[key] || {
+      name: key.charAt(0).toUpperCase() + key.slice(1),
+      number: '5065550142',
+      voiceName: '',
+      lang: 'en',
+      pitch: 1.0,
+      rate: 1.0,
+      volume: 1.0,
+      voicemailChance: 0,
+      foley: 'beep',
+      prefer: [],
+      scripts: {
+        greeting: 'Hello there, how can I help you?',
+        nearPhone: 'Right here. What can I do for you?',
+        ranToPhone: 'Coming, keep it brief. What do you need?',
+        voicemail: 'Leave a message after the tone.',
+        secretConfirm: 'Confirmed. Proceeding now.',
+        normalReply: 'Got it. Anything else?'
+      }
+    };
+    var shared = readSharedConfig();
+    var override = (shared.npcs && shared.npcs[key]) ? shared.npcs[key] : {};
+    return Object.assign({}, base, override, {
+      scripts: Object.assign({}, base.scripts, override.scripts)
+    });
+  }
+
+  function runFoley(foleyType) {
+    if (foleyType === 'chime') {
+      playRadioChime();
+    } else if (foleyType !== 'none') {
+      playPhoneBeep();
+    }
+  }
+
+  var BAD_VOICES = /espeak|compact|robot|zarvox|fred|albert|ralph|junior|bad news|good news|bells|cellos|trinoids|whisper|boing|bubbles|deranged|hysterical|organ|superstar/;
+
+  function scoreVoice(v, npcCfg) {
+    var n = (v.name + ' ' + v.lang).toLowerCase(), sc = 0;
+    if (v.lang.toLowerCase().indexOf('en') !== 0) return -1;
+    if (BAD_VOICES.test(n)) return -100;
+    if (/natural|neural|online/.test(n)) sc += 50;     // Edge "Natural" voices
+    if (/premium|enhanced/.test(n)) sc += 40;          // upgraded Apple / Android voices
+    if (/en-ca|en-us/.test(n)) sc += 5;
+    var prefs = Array.isArray(npcCfg.prefer) ? npcCfg.prefer : [];
+    for (var i = 0; i < prefs.length; i++) {
+      if (n.indexOf(String(prefs[i]).toLowerCase()) !== -1) sc += 30 - i;
+    }
+    return sc;
+  }
+
+  function resolveVoice(npcCfg) {
+    if (!voices.length) return null;
+    if (npcCfg.voiceName) {                            // an explicit voiceName still wins
+      var target = String(npcCfg.voiceName).toLowerCase();
+      for (var i = 0; i < voices.length; i++) {
+        if (voices[i].name.toLowerCase().indexOf(target) !== -1) return voices[i];
+      }
+    }
+    var best = null, bestScore = -1;
+    for (var k = 0; k < voices.length; k++) {
+      var sc = scoreVoice(voices[k], npcCfg);
+      if (sc > bestScore) { best = voices[k]; bestScore = sc; }
+    }
+    return best || voices[0];
+  }
+
+  function loadVoices() {
+    if (!window.speechSynthesis) return;
+    voices = window.speechSynthesis.getVoices() || [];
+  }
+
+  function speak(npcId, spokenText, captionText, onDone, sOpts) {
+    sOpts = sOpts || {};
+    var cfg = getNpcConfig(npcId);
+    var text = spokenText || (cfg.scripts && cfg.scripts.greeting) || '';
+    stopAudioOnly();
+    if (!sOpts.skipFoley) {
+      try { runFoley(cfg.foley); } catch (e) {}
+    }
+    if (!window.speechSynthesis || !text) {
+      if (typeof onDone === 'function') timers.push(setTimeout(onDone, 900));
+      return;
+    }
+    var v = resolveVoice(cfg);
+    var basePitch = typeof sOpts.pitchOverride === 'number' ? sOpts.pitchOverride : (typeof cfg.pitch === 'number' ? cfg.pitch : 1.0);
+    var baseRate = typeof sOpts.rateOverride === 'number' ? sOpts.rateOverride : (typeof cfg.rate === 'number' ? cfg.rate : 1.0);
+    var vol = typeof cfg.volume === 'number' ? cfg.volume : 1.0;
+    var parts = (text.match(/[^.!?,;:]+[.!?,;:]*/g) || [text]).map(function (p) { return p.trim(); }).filter(Boolean);
+    var gen = ++speakGen, idx = 0;
+
+    function jitter(x, amt) { return x + (Math.random() - 0.5) * amt; }
+    function finish() { if (typeof onDone === 'function') onDone(); }
+    function next() {
+      if (gen !== speakGen) return;                    // a newer line replaced this one
+      if (idx >= parts.length) { finish(); return; }
+      var part = parts[idx++];
+      var utt = new SpeechSynthesisUtterance(part);
+      if (v) utt.voice = v;
+      utt.pitch = Math.max(0, Math.min(2, jitter(basePitch, 0.06)));
+      utt.rate = Math.max(0.1, Math.min(3, jitter(baseRate, 0.06)));
+      utt.volume = vol;
+      utt.onend = function () {
+        if (gen !== speakGen) return;
+        var pause = (/[.!?]$/.test(part) ? 230 : 110) + Math.random() * 100;
+        timers.push(setTimeout(next, pause));
+      };
+      utt.onerror = function (ev) {
+        if (gen !== speakGen) return;
+        if (ev && (ev.error === 'canceled' || ev.error === 'interrupted')) return;
+        finish();
+      };
+      try { window.speechSynthesis.speak(utt); } catch (e) { finish(); }
+    }
+    timers.push(setTimeout(next, sOpts.skipFoley ? 20 : 180));
+  }
+
+  function setPhoneUI(who, line, heard, showGateBtn) {
+    $('phWho').textContent = who;
+    $('phLine').textContent = line;
+    if (typeof heard === 'string') $('phHeard').textContent = heard;
+    $('phGateBtn').classList.toggle('on', !!showGateBtn);
+  }
+
+  function closePhoneModal(keepAudio) {
+    if (!keepAudio) stopAudioOnly();
+    if (recog) { try { recog.abort(); } catch (e) {} }
+    $('avPhoneModal').classList.remove('open');
+    $('phGateBtn').classList.remove('on');
+  }
+
+  function handleCallerPhrase(raw) {
+  var txt = (raw || '').toLowerCase();
+  var cfg = readSharedConfig();
+  var waitressCfg = getNpcConfig('waitress');
+  var reqToppings = Array.isArray(cfg.passcodeToppings) && cfg.passcodeToppings.length
+    ? cfg.passcodeToppings.map(function (t) { return String(t).toLowerCase().trim(); })
+    : ['pickles', 'olives', 'mushrooms'];
+
+  $('phHeard').textContent = 'You ordered: "' + raw + '"';
+
+  var matchesSecret = reqToppings.every(function (t) { return txt.indexOf(t) !== -1; });
+  if (matchesSecret) {
+    var confirmLine = waitressCfg.scripts.secretConfirm || 'Got that order down. I will get that right in for you.';
+    setPhoneUI(waitressCfg.name, confirmLine, 'You ordered: "' + raw + '"', true);
+    speak('waitress', confirmLine, confirmLine, function () {
+      closePhoneModal(true);
+      goToPasscodeGate();
+    });
+    return;
+  }
+
+  var reply = waitressCfg.scripts.normalReply;
+  setPhoneUI(waitressCfg.name, reply, 'You ordered: "' + raw + '"', false);
+  speak('waitress', reply, reply);
+}
+
+  function startSpeechInput() {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      setPhoneUI('Waitress', 'Microphone input is not supported in this browser. Select one of the pizza replies below.');
+      return;
+    }
+    stopAudioOnly();
+    try {
+      recog = new SR();
+      recog.lang = 'en-US';
+      recog.interimResults = false;
+      recog.maxAlternatives = 1;
+      $('phListenBtn').textContent = 'Listening... Speak your pizza order';
+      recog.onresult = function (ev) {
+        $('phListenBtn').textContent = 'Tap to Speak Pizza Order (Mic)';
+        handleCallerPhrase(ev.results[0][0].transcript);
+      };
+      recog.onerror = function (ev) {
+        $('phListenBtn').textContent = 'Tap to Speak Pizza Order (Mic)';
+        var err = ev && ev.error ? ev.error : 'unknown';
+        $('phHeard').textContent = 'Mic error: ' + err + ' (protocol: ' + window.location.protocol + ')';
+      };
+      recog.onend = function () {
+        $('phListenBtn').textContent = 'Tap to Speak Pizza Order (Mic)';
+      };
+      recog.start();
+    } catch (e) {
+      $('phListenBtn').textContent = 'Tap to Speak Pizza Order (Mic)';
+    }
+  }
+
+  function openPhoneModal(roleKey, mode) {
+    var key = roleKey || 'waitress';
+    var person = getNpcConfig(key);
+    var scripts = person.scripts || {};
+    var baseRate = typeof person.rate === 'number' ? person.rate : 1.0;
+    var basePitch = typeof person.pitch === 'number' ? person.pitch : 1.0;
+    var spoken = scripts.greeting;
+    var rateOverride = null;
+    var pitchOverride = null;
+
+    if (mode === 'near') {
+      spoken = scripts.nearPhone || scripts.greeting;
+      rateOverride = Math.max(0.75, baseRate * 0.96);
+      pitchOverride = Math.max(0.55, basePitch - 0.03);
+    } else if (mode === 'curt') {
+      spoken = scripts.ranToPhone || scripts.greeting;
+      rateOverride = Math.min(1.4, baseRate * 1.18);
+      pitchOverride = Math.min(1.6, basePitch + 0.06);
+    }
+
+    $('avPhoneModal').classList.add('open');
+    setPhoneUI(person.name, spoken, '', false);
+    speak(key, spoken, spoken, null, {
+      rateOverride: rateOverride,
+      pitchOverride: pitchOverride
+    });
+  }
+
+  function callPizzaPlace(roleKey) {
+    stopAudioOnly();
+    var key = roleKey || 'waitress';
+    var person = getNpcConfig(key);
+    var scripts = person.scripts || {};
+    var nowMs = Date.now();
+    var prev = roleState[key] || { lastCallMs: 0 };
+    var isNearPhone = !!(prev.lastCallMs && (nowMs - prev.lastCallMs) <= QUICK_REDIAL_MS);
+    roleState[key] = { lastCallMs: nowMs };
+
+    var goesToVM = !isNearPhone && Math.random() < (person.voicemailChance || 0.2);
+    var ringCount = (isNearPhone && !goesToVM) ? 0 : (Math.floor(Math.random() * 3) + 1);
+    var mode = goesToVM ? 'vm' : (ringCount === 0 ? 'near' : (ringCount >= 3 ? 'curt' : 'normal'));
+
+    $('avPhoneModal').classList.add('open');
+    setPhoneUI('Dialing...', 'Dial tone (350+440 Hz)...', '', false);
+
+    var stopDial = startDualTone(350, 440, 0.1);
+    timers.push(setTimeout(function () {
+      stopDial(0.008);
+      setPhoneUI('Dialing...', 'Auto-dialing ' + PHONE + '...');
+      dialDTMF(person.number || '5065550142', 0.065, 0.035, function () {
+        timers.push(setTimeout(function () {
+          playRingCadence(ringCount, function (ringText) {
+            setPhoneUI('Ringing...', ringText);
+          }, function () {
+            if (goesToVM) {
+              var vmText = scripts.voicemail || 'Leave a message after the tone.';
+              var tone = startDualTone(1000, 1000, 0.11);
+              timers.push(setTimeout(function () {
+                tone(0.01);
+                setPhoneUI('Answering Machine', vmText);
+                speak(key, vmText, vmText, null, { skipFoley: true, pitchOverride: 0.98, rateOverride: 1.0 });
+              }, 450));
+            } else {
+              openPhoneModal(key, mode);
+            }
+          });
+        }, 250));
+      });
+    }, 800));
+  }
+
+  $('callBtn').onclick = function () {
+    beep(440, 0.08);
+    callPizzaPlace('waitress');
+  };
+  $('phHangup').onclick = function () { closePhoneModal(false); };
+  $('phGateBtn').onclick = function () { closePhoneModal(true); goToPasscodeGate(); };
+  $('phListenBtn').onclick = startSpeechInput;
+
+  var chips = document.querySelectorAll('.ph-chip[data-say]');
+  for (var c = 0; c < chips.length; c++) {
+    chips[c].onclick = function () {
+      handleCallerPhrase(this.getAttribute('data-say'));
+    };
+  }
+
+  loadVoices();
+  if (window.speechSynthesis && 'onvoiceschanged' in window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }
+  buildMenu();
+
+  window.AgencyVoice = {
+    defaults: DEFAULT_NPCS,
+    getNpcConfig: getNpcConfig,
+    getVoices: function () { loadVoices(); return voices; },
+    speak: speak,
+    stop: stopAudioOnly,
+    callPizzaPlace: callPizzaPlace,
+    openPhoneModal: openPhoneModal,
+    closePhoneModal: closePhoneModal
+  };
+})();
+</script>
+</body>
+</html>

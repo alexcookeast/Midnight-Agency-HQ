@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Midnight Agency — Passcode Gate</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<script src="./js/holiday-overlay.js" defer></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Nunito',system-ui,Arial,sans-serif;background:#14102B;color:#F6F2FF;-webkit-tap-highlight-color:transparent}
+.screen{display:none;max-width:720px;margin:0 auto;min-height:100vh;padding:18px 16px 40px}
+.screen.on{display:block}
+h1,h2,h3,.ftitle{font-family:'Fredoka',system-ui,sans-serif}
+.ftitle{font-weight:700}
+.card{background:#221A45;border:1px solid #3B2F70;border-radius:18px;padding:16px;margin:14px 0}
+.btn{display:block;width:100%;min-height:54px;border-radius:999px;border:none;background:#6BF2C8;color:#14102B;font-weight:800;font-size:17px;margin:10px 0;cursor:pointer;font-family:inherit;text-decoration:none;text-align:center;line-height:54px}
+.btn.alt{background:#2D2359;color:#F6F2FF;border:2px solid #3B2F70;line-height:50px}
+.btn.pink{background:#FF5FA2;color:#14102B;display:flex;align-items:center;justify-content:center;gap:10px;line-height:1.2}
+.muted{color:#B9B0DD;font-size:14px}
+.tag{display:inline-block;background:#FFD76B;color:#14102B;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.lbl{font-size:12px;font-weight:800;letter-spacing:1px;color:#6BF2C8;margin-bottom:6px}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.key{min-height:58px;border:none;color:#F6F2FF;cursor:pointer;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;font-size:26px;border-radius:18px;background:#221A45;display:flex;align-items:center;justify-content:center}
+.key.ghost{background:transparent;border:2px solid #3B2F70}
+.keyspace{min-height:58px}
+.dots{display:flex;gap:16px;justify-content:center;align-items:center;margin:12px 0}
+.dot{width:14px;height:14px;border-radius:50%;border:2px solid #5A4D96}
+.dot.f{width:18px;height:18px;background:#6BF2C8;border-color:#6BF2C8}
+.crest{width:88px;height:88px;border-radius:50%;background:#221A45;border:2px solid #3B2F70;display:flex;align-items:center;justify-content:center}
+.codefield{min-height:50px;border-radius:16px;border:2px solid #3B2F70;background:#221A45;color:#F6F2FF;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;font-size:19px;padding:0 16px;display:flex;align-items:center}
+.field{width:100%;min-height:50px;border-radius:12px;background:#1B1438;color:#F6F2FF;border:2px solid #3B2F70;font-size:16px;padding:0 12px;margin:10px 0;font-family:inherit}
+.promo-box{background:#2D2359;border:2px solid #FFD76B;border-radius:18px;padding:16px;margin:14px 0}
+.topbar-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.small-link{color:#6BF2C8;font-weight:800;font-size:13px;text-decoration:none}
+</style>
+</head>
+<body>
+
+<section class="screen on" id="gateScreen">
+  <div class="topbar-row">
+    <a class="small-link" href="./index.html">&larr; Back to Pizza Parlour</a>
+    <span class="muted" id="statusBadge">Rookie</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:10px">
+    <div class="crest">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6BF2C8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8.2-8 9-4.8-.8-8-4.5-8-9V6z"/><path d="M7.5 11.5s1.8-2.8 4.5-2.8 4.5 2.8 4.5 2.8-1.8 2.8-4.5 2.8-4.5-2.8-4.5-2.8z"/><circle cx="12" cy="11.5" r="1.1" fill="#6BF2C8"/></svg>
+    </div>
+    <div class="ftitle" style="font-size:28px;line-height:1">Midnight Agency</div>
+    <span class="tag" style="letter-spacing:2px;padding:4px 10px">TOP SECRET: AGENTS ONLY</span>
+  </div>
+
+  <div style="margin-top:18px">
+    <div class="lbl">AGENT IDENTITY</div>
+    <div class="codefield" id="whoGate">Unassigned (Rookie)</div>
+  </div>
+
+  <div style="text-align:center;margin:16px 0 10px">
+    <div class="lbl" id="codePromptLbl" style="margin-bottom:10px">CHOOSE A 4-DIGIT PASSCODE</div>
+    <div class="dots" id="ldots" role="img"></div>
+  </div>
+
+  <div class="keys" id="lkeys"></div>
+
+  <button class="btn pink" id="submitCodeBtn" type="button" style="min-height:56px;margin-top:16px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14102B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg>
+    <span id="submitBtnTxt">Set Passcode &amp; Continue</span>
+  </button>
+
+  <div class="muted" id="lMsg" style="text-align:center;min-height:22px;color:#FFD76B"></div>
+  <div class="muted" id="loginHint" style="text-align:center;line-height:1.4;font-size:13px"></div>
+</section>
+
+<section class="screen" id="detourScreen">
+  <div class="topbar-row">
+    <button type="button" class="small-link" id="backToGateBtn" style="background:none;border:none;cursor:pointer;padding:0">&larr; Lock / Change Code</button>
+    <span class="tag" id="detourRankTag">ROOKIE BRIEFING</span>
+  </div>
+
+  <div class="card" id="rookieDetourBox" style="display:none">
+    <div class="lbl">FIRST-TIME / ROOKIE DETOUR</div>
+    <h2 style="margin:4px 0 8px">Welcome to the Midnight Agency</h2>
+    <p class="muted" style="margin:0 0 10px">Your 4-digit passcode is active. Because your rank is currently <strong>Rookie</strong>, your official agent codename is locked until you earn promotions in the field.</p>
+    <p class="muted" style="margin:0">Head into Player HQ to log sightings, take cases, and build your star count toward promotion.</p>
+  </div>
+
+  <div class="promo-box" id="promoDetourBox" style="display:none">
+    <div class="lbl" style="color:#FFD76B">PROMOTION DETOUR · CODENAME UNLOCKED</div>
+    <h2 style="margin:4px 0 6px">Claim Your Agent Codename</h2>
+    <p class="muted" style="margin:0 0 8px">You are cleared past Rookie. Set or confirm your codename before entering Player HQ:</p>
+    <input id="codenameInput" class="field" type="text" maxlength="24" placeholder="e.g. Nightfox">
+    <button class="btn alt" id="saveCodenameBtn" type="button">Save Codename</button>
+    <div class="muted" id="codenameMsg" style="min-height:20px;color:#6BF2C8"></div>
+  </div>
+
+  <button class="btn pink" id="enterDashboardBtn" type="button">Enter Player HQ Dashboard &rarr;</button>
+</section>
+
+<script>
+(function () {
+  'use strict';
+  var STORAGE_KEY = 'midnight_agency_config_v1';
+  var DASHBOARD_URL = './player-dashboard.html';
+  var code = '';
+
+  function $(id) { return document.getElementById(id); }
+
+  function defaultConfig() {
+    return {
+      gm: { userName: 'GM', passCode: 'MIDNIGHT-GM', clearanceKey: 'MIDNIGHT-GM' },
+      player: { rank: 'Rookie', userName: '', passCode: '', stars: 0 },
+      passcodeToppings: ['pickles', 'olives', 'mushrooms'],
+      secretPhrase: 'pickles, olives, and mushrooms',
+      dashboardUrl: './midnight-agency-passcode.html',
+      christmasEnabled: true,
+      snowDensity: 45,
+      snowSpeed: 1.0
+    };
+  }
+
+  function readConfig() {
+    var base = defaultConfig();
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return base;
+      var parsed = JSON.parse(raw);
+      return Object.assign({}, base, parsed, {
+        gm: Object.assign({}, base.gm, parsed && parsed.gm),
+        player: Object.assign({}, base.player, parsed && parsed.player)
+      });
+    } catch (e) {
+      return base;
+    }
+  }
+
+  function writeConfig(patch) {
+    var cur = readConfig();
+    var next = Object.assign({}, cur, patch || {}, {
+      gm: Object.assign({}, cur.gm, patch && patch.gm),
+      player: Object.assign({}, cur.player, patch && patch.player)
+    });
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch (e) {}
+    if (window.MidnightAgencyOverlay && typeof window.MidnightAgencyOverlay.apply === 'function') {
+      window.MidnightAgencyOverlay.apply(next);
+    }
+    return next;
+  }
+
+  function effectiveRank(cfg) {
+    var stars = Number((cfg.player && cfg.player.stars) || 0);
+    if (stars >= 5) return 'Field Agent';
+    if (stars >= 2) return 'Operative';
+    return (cfg.player && cfg.player.rank) || 'Rookie';
+  }
+
+  function isPromoted(cfg) {
+    return effectiveRank(cfg) !== 'Rookie';
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('on'); });
+    $(id).classList.add('on');
+    window.scrollTo(0, 0);
+  }
+
+  function refreshGateUI() {
+    var cfg = readConfig();
+    var rank = effectiveRank(cfg);
+    var promoted = isPromoted(cfg);
+    var savedCode = String((cfg.player && cfg.player.passCode) || '').trim();
+    var codename = promoted ? String((cfg.player && cfg.player.userName) || '').trim() : '';
+
+    $('statusBadge').textContent = rank;
+    $('whoGate').textContent = codename ? ('Agent ' + codename + ' (' + rank + ')') : ('Unassigned (' + rank + ')');
+
+    if (savedCode.length === 4) {
+      $('codePromptLbl').textContent = 'ENTER 4-DIGIT PASSCODE';
+      $('submitBtnTxt').textContent = 'Verify Passcode';
+      $('loginHint').textContent = promoted
+        ? 'Enter your 4-digit passcode to proceed to codename check and Player HQ.'
+        : 'Enter your 4-digit passcode. Rookie recruits take a quick briefing detour before HQ.';
+    } else {
+      $('codePromptLbl').textContent = 'FIRST-TIME RECRUIT: SET 4-DIGIT PASSCODE';
+      $('submitBtnTxt').textContent = 'Set Passcode & Start Detour';
+      $('loginHint').textContent = 'No passcode on file yet. Choose a 4-digit code to initialize your Rookie profile.';
+    }
+  }
+
+  function drawDots() {
+    var dots = $('ldots');
+    dots.innerHTML = '';
+    for (var i = 0; i < 4; i++) {
+      var d = document.createElement('div');
+      d.className = 'dot' + (i < code.length ? ' f' : '');
+      dots.appendChild(d);
+    }
+  }
+
+  function buildKeypad() {
+    var keys = $('lkeys');
+    keys.innerHTML = '';
+    ['1','2','3','4','5','6','7','8','9','','0','BK'].forEach(function (k) {
+      if (!k) {
+        var sp = document.createElement('div');
+        sp.className = 'keyspace';
+        keys.appendChild(sp);
+        return;
+      }
+      var b = document.createElement('button');
+      b.type = 'button';
+      if (k === 'BK') {
+        b.className = 'key ghost';
+        b.textContent = '⌫';
+        b.setAttribute('aria-label', 'Delete');
+        b.onclick = function () { code = code.slice(0, -1); $('lMsg').textContent = ''; drawDots(); };
+      } else {
+        b.className = 'key';
+        b.textContent = k;
+        b.onclick = function () {
+          if (code.length < 4) {
+            code += k;
+            $('lMsg').textContent = '';
+            drawDots();
+          }
+        };
+      }
+      keys.appendChild(b);
+    });
+    drawDots();
+  }
+
+  function openDetourForCurrentUser(isFirstTime) {
+    var cfg = readConfig();
+    var rank = effectiveRank(cfg);
+    var promoted = isPromoted(cfg);
+
+    $('detourRankTag').textContent = isFirstTime
+      ? 'FIRST-TIME ROOKIE'
+      : (rank.toUpperCase() + ' CLEARANCE');
+
+    if (!promoted) {
+      $('rookieDetourBox').style.display = 'block';
+      $('promoDetourBox').style.display = 'none';
+    } else {
+      $('rookieDetourBox').style.display = 'none';
+      $('promoDetourBox').style.display = 'block';
+      $('codenameInput').value = cfg.player.userName || '';
+      $('codenameMsg').textContent = '';
+    }
+    showScreen('detourScreen');
+  }
+
+  $('submitCodeBtn').onclick = function () {
+    if (code.length !== 4) {
+      $('lMsg').textContent = 'Please enter all 4 digits.';
+      return;
+    }
+    var cfg = readConfig();
+    var savedCode = String((cfg.player && cfg.player.passCode) || '').trim();
+
+    if (savedCode.length !== 4) {
+      writeConfig({
+        player: { passCode: code, rank: 'Rookie', userName: '' }
+      });
+      code = '';
+      drawDots();
+      $('lMsg').textContent = '';
+      refreshGateUI();
+      openDetourForCurrentUser(true);
+      return;
+    }
+
+    if (code === savedCode) {
+      code = '';
+      drawDots();
+      $('lMsg').textContent = '';
+      refreshGateUI();
+      openDetourForCurrentUser(false);
+    } else {
+      code = '';
+      drawDots();
+      $('lMsg').textContent = 'Passcode did not match.';
+    }
+  };
+
+  $('saveCodenameBtn').onclick = function () {
+    var cfg = readConfig();
+    if (!isPromoted(cfg)) {
+      $('codenameMsg').textContent = 'Codenames unlock after promotion past Rookie.';
+      return;
+    }
+    var name = ($('codenameInput').value || '').trim();
+    if (!name) {
+      $('codenameMsg').textContent = 'Enter a codename first.';
+      return;
+    }
+    writeConfig({ player: { userName: name, rank: effectiveRank(cfg) } });
+    $('codenameMsg').textContent = 'Codename saved: ' + name;
+    refreshGateUI();
+  };
+
+  $('enterDashboardBtn').onclick = function () {
+    window.location.href = DASHBOARD_URL;
+  };
+
+  $('backToGateBtn').onclick = function () {
+    code = '';
+    drawDots();
+    refreshGateUI();
+    showScreen('gateScreen');
+  };
+
+  window.addEventListener('storage', function (e) {
+    if (e.key === STORAGE_KEY) refreshGateUI();
+  });
+
+  buildKeypad();
+  refreshGateUI();
+})();
+</script>
+</body>
+</html>
