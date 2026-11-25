@@ -1,0 +1,284 @@
+{
+  "namePoolsByEthnicity": {
+    "english": {
+      "label": "English",
+      "femaleFirstNames": [
+        "Clara", "Eleanor", "Beatrice", "Hazel", "Alice", "Mabel", "Florence", "Gemma",
+        "Harriet", "Phoebe", "Iris", "Millicent"
+      ],
+      "maleFirstNames": [
+        "Arthur", "Arthur-Lee", "Thomas", "George", "Henry", "Edward", "Charles", "Oliver",
+        "Graham", "Clive", "Nigel", "Stanley"
+      ],
+      "neutralFirstNames": ["Robin", "Jamie", "Francis", "Morgan"],
+      "lastNames": [
+        "Whitaker", "Holloway", "Bramwell", "Aldridge", "Pendleton", "Thornton", "Houghton", "Kerr",
+        "Fletcher", "Mercer", "Baines", "Cromwell", "Waverly", "Ashford"
+      ],
+      "nickNames": ["Bobby", "Guv'nor", "Foggy", "Pip", "Cheshire", "Squire"]
+    },
+    "french": {
+      "label": "French",
+      "femaleFirstNames": [
+        "Camille", "Margaux", "Celine", "Genevieve", "Mathilde", "Solene", "Delphine", "Amelie",
+        "Colette", "Manon", "Elodie", "Sabine"
+      ],
+      "maleFirstNames": [
+        "Jean-Luc", "Henri", "Luc", "Bastien", "Thibault", "Remi", "Gaspard", "Etienne",
+        "Julien", "Sebastien", "Benoit", "Laurent"
+      ],
+      "neutralFirstNames": ["Camille", "Dominique", "Sacha", "Alix"],
+      "lastNames": [
+        "Beaumont", "Delacroix", "Moreau", "Laurent", "Chevalier", "Fontaine", "Mercier", "Lefevre",
+        "Boucher", "Gauthier", "Marchand", "Rousseau", "Girard", "Vidal"
+      ],
+      "nickNames": ["Renard", "Le Fantome", "Ciel", "Moustache", "Ombre", "L'Eclair"]
+    },
+    "german": {
+      "label": "German",
+      "femaleFirstNames": [
+        "Greta", "Frieda", "Katrin", "Anneliese", "Heidi", "Johanna", "Marlene", "Lotte",
+        "Astrid", "Birgit", "Klara", "Ursula"
+      ],
+      "maleFirstNames": [
+        "Hans", "Karl", "Dieter", "Werner", "Lukas", "Franz", "Kaspar", "Otto",
+        "Wolfgang", "Stefan", "Heinrich", "Konrad"
+      ],
+      "neutralFirstNames": ["Kim", "Luca", "Toni", "Alex"],
+      "lastNames": [
+        "Vogel", "Weber", "Becker", "Hoffmann", "Schulz", "Keller", "Wolf", "Zimmermann",
+        "Braun", "Hartmann", "Krueger", "Baumann", "Richter", "Krause"
+      ],
+      "nickNames": ["Fuchs", "Blitz", "Eisen", "Schatten", "Doktor", "Rabe"]
+    },
+    "irish": {
+      "label": "Irish",
+      "femaleFirstNames": [
+        "Maeve", "Saoirse", "Niamh", "Ciara", "Aoife", "Fiona", "Siobhan", "Tara",
+        "Brigid", "Roisin", "Eileen", "Nora"
+      ],
+      "maleFirstNames": [
+        "Liam", "Sean", "Connor", "Patrick", "Cillian", "Declan", "Ronan", "Eamon",
+        "Peter", "John", "Finn", "Owen"
+      ],
+      "neutralFirstNames": ["Rowan", "Quinn", "Casey", "Riley"],
+      "lastNames": [
+        "Murphy", "Kelly", "O'Brien", "Walsh", "Byrne", "Ryan", "Cosgrove", "Doyle",
+        "McCarthy", "Gallagher", "Kennedy", "Lynch", "Murray", "Quinn", "Moore"
+      ],
+      "nickNames": ["Swarthy", "Red", "Doc", "Skipper", "Banshee", "Lucky", "Shadow"]
+    },
+    "west-african": {
+      "label": "West African",
+      "femaleFirstNames": [
+        "Amara", "Zainab", "Adanna", "Amina", "Fatou", "Ngozi", "Binta", "Chioma",
+        "Halima", "Yaa", "Zuri", "Ifunanya"
+      ],
+      "maleFirstNames": [
+        "Kwame", "Kofi", "Chidi", "Tunde", "Moussa", "Ibrahim", "Sadio", "Kojo",
+        "Olu", "Yaw", "Bakary", "Emeka"
+      ],
+      "neutralFirstNames": ["Sori", "Kofi-Ama", "Tobi", "Jide"],
+      "lastNames": [
+        "Mensah", "Okafor", "Diallo", "Boateng", "Traore", "Adeyemi", "Ndiaye", "Balogun",
+        "Owusu", "Kamara", "Kone", "Sow", "Eze", "Danso"
+      ],
+      "nickNames": ["Tower", "Hawk", "Flash", "Chief", "Atlas", "Whisper", "Viper"]
+    },
+    "japanese": {
+      "label": "Japanese",
+      "femaleFirstNames": [
+        "Hana", "Mei", "Yui", "Sakura", "Aoi", "Rin", "Nanami", "Mio",
+        "Haruka", "Ayaka", "Emi", "Kana"
+      ],
+      "maleFirstNames": [
+        "Kenji", "Ren", "Haruto", "Sora", "Daiki", "Kaito", "Takumi", "Riku",
+        "Hayato", "Shota", "Yuto", "Naoki"
+      ],
+      "neutralFirstNames": ["Ren", "Sora", "Haru", "Hikaru"],
+      "lastNames": [
+        "Sato", "Suzuki", "Takahashi", "Tanaka", "Watanabe", "Ito", "Yamamoto", "Nakamura",
+        "Kobayashi", "Kato", "Yoshida", "Yamada", "Sasaki", "Morita"
+      ],
+      "nickNames": ["Kitsune", "Phantom", "Cipher", "Origami", "Bolt", "Specter"]
+    },
+    "mexican-central-american": {
+      "label": "Mexican / Central American",
+      "femaleFirstNames": [
+        "Sofia", "Camila", "Valentina", "Isabella", "Lucia", "Elena", "Valeria", "Marisol",
+        "Jimena", "Ximena", "Renata", "Paloma"
+      ],
+      "maleFirstNames": [
+        "Mateo", "Diego", "Santiago", "Emiliano", "Carlos", "Javier", "Tomas", "Rafael",
+        "Alejandro", "Gabriel", "Andres", "Rodrigo"
+      ],
+      "neutralFirstNames": ["Cruz", "Ariel", "Sol", "Paz"],
+      "lastNames": [
+        "Hernandez", "Garcia", "Martinez", "Lopez", "Gonzalez", "Perez", "Rodriguez", "Sanchez",
+        "Ramirez", "Flores", "Morales", "Castro", "Reyes", "Ortiz"
+      ],
+      "nickNames": ["El Lobo", "Sombra", "Chispa", "Cometa", "Zorro", "Relampago"]
+    },
+    "scandinavian": {
+      "label": "Scandinavian",
+      "femaleFirstNames": [
+        "Freja", "Astrid", "Ingrid", "Linnea", "Maja", "Saga", "Ebba", "Klara",
+        "Sigrid", "Tove", "Alva", "Frida"
+      ],
+      "maleFirstNames": [
+        "Soren", "Henrik", "Anders", "Lukas", "Mikkel", "Oskar", "Erik", "Nils",
+        "Kasper", "Viggo", "Magnus", "Aksel"
+      ],
+      "neutralFirstNames": ["Robin", "Kim", "Noel", "Bo"],
+      "lastNames": [
+        "Lindqvist", "Johansson", "Nielsen", "Bergstrom", "Solberg", "Holm", "Dahl", "Ek",
+        "Bakke", "Soderberg", "Lund", "Nystrom"
+      ],
+      "nickNames": ["Frost", "Fjord", "Falcon", "Nord", "Glacier", "Ghost"]
+    },
+    "south-asian": {
+      "label": "South Asian",
+      "femaleFirstNames": [
+        "Priya", "Ananya", "Meera", "Diya", "Kavya", "Riya", "Tara", "Neha",
+        "Aisha", "Pooja", "Shreya", "Nandini"
+      ],
+      "maleFirstNames": [
+        "Arjun", "Rohan", "Vikram", "Aarav", "Dev", "Kabir", "Nikhil", "Siddharth",
+        "Aditya", "Pranav", "Varun", "Karan"
+      ],
+      "neutralFirstNames": ["Kiran", "Aryan", "Jatin", "Neel"],
+      "lastNames": [
+        "Patel", "Sharma", "Nair", "Rao", "Singh", "Verma", "Menon", "Iyer",
+        "Kulkarni", "Desai", "Chopra", "Bhat"
+      ],
+      "nickNames": ["Mirage", "Monsoon", "Vortex", "Cobalt", "Apex", "Riddle"]
+    },
+    "eastern-european": {
+      "label": "Eastern European",
+      "femaleFirstNames": [
+        "Anya", "Katarina", "Mila", "Zofia", "Elena", "Daria", "Tessa", "Nadia",
+        "Ivana", "Polina", "Marta", "Veronika"
+      ],
+      "maleFirstNames": [
+        "Luka", "Matej", "Tomasz", "Viktor", "Andrei", "Bram", "Marek", "Nikolai",
+        "Stefan", "Oskar", "Jakub", "Dorian"
+      ],
+      "neutralFirstNames": ["Sasha", "Misha", "Vesper", "Jan"],
+      "lastNames": [
+        "Kowalski", "Novak", "Horvat", "Petrov", "Kovac", "Zielinski", "Dvorak", "Popov",
+        "Wozniak", "Kral", "Sokolov", "Balazs"
+      ],
+      "nickNames": ["Crow", "Winter", "Rook", "Iron", "Sparrow", "Cipher"]
+    },
+    "mediterranean-levant": {
+      "label": "Mediterranean / Levantine",
+      "femaleFirstNames": [
+        "Layla", "Nadia", "Yasmin", "Salma", "Dalia", "Tamar", "Rania", "Samira",
+        "Noor", "Leila", "Farah", "Zara"
+      ],
+      "maleFirstNames": [
+        "Tariq", "Zayd", "Samir", "Karim", "Omar", "Rami", "Nabil", "Fadi",
+        "Jad", "Youssef", "Marwan", "Elias"
+      ],
+      "neutralFirstNames": ["Noor", "Rami", "Shams", "Sami"],
+      "lastNames": [
+        "Haddad", "Khoury", "Mansour", "Darwish", "Nassar", "Sabbagh", "Farah", "Ghanem",
+        "Bakri", "Aoun", "Saad", "Zayed"
+      ],
+      "nickNames": ["Mirage", "Falcon", "Dune", "Cobalt", "Whisper", "Harbor"]
+    },
+    "south-american": {
+      "label": "South American",
+      "femaleFirstNames": [
+        "Catalina", "Florencia", "Martina", "Agustina", "Julieta", "Antonia", "Milagros", "Constanza",
+        "Bianca", "Emilia", "Trinidad", "Josefina"
+      ],
+      "maleFirstNames": [
+        "Joaquin", "Facundo", "Lautaro", "Ignacio", "Tomas", "Matias", "Benjamin", "Ramiro",
+        "Franco", "Gael", "Valentin", "Camilo"
+      ],
+      "neutralFirstNames": ["Azul", "Cielo", "Mar", "Andes"],
+      "lastNames": [
+        "Rojas", "Silva", "Mendoza", "Castillo", "Vargas", "Quispe", "Aguilar", "Herrera",
+        "Fuentes", "Salazar", "Paredes", "Navarro"
+      ],
+      "nickNames": ["Condor", "Pampa", "Sombra", "Viento", "Cobre", "Flash"]
+    }
+  },
+  "appearancePools": {
+    "height": [
+      { "category": "short", "cmRange": [150, 162], "clueText": "quite short" },
+      { "category": "average", "cmRange": [165, 178], "clueText": "medium height" },
+      { "category": "tall", "cmRange": [182, 203], "clueText": "very tall" }
+    ],
+    "weight": [
+      { "category": "slim", "clueText": "slim and light" },
+      { "category": "medium", "clueText": "average weight" },
+      { "category": "heavy", "clueText": "heavy-set" }
+    ],
+    "build": [
+      { "category": "wiry", "clueText": "wiry and nimble" },
+      { "category": "athletic", "clueText": "athletic and broad-shouldered" },
+      { "category": "stocky", "clueText": "stocky and sturdy" },
+      { "category": "lanky", "clueText": "long-limbed and lanky" }
+    ],
+    "complexion": [
+      { "category": "fair", "clueText": "fair complexion" },
+      { "category": "olive", "clueText": "olive complexion" },
+      { "category": "tan", "clueText": "sun-tanned complexion" },
+      { "category": "deep-brown", "clueText": "deep brown complexion" },
+      { "category": "warm-brown", "clueText": "warm brown complexion" }
+    ],
+    "hairColor": [
+      { "category": "black", "clueText": "jet-black hair" },
+      { "category": "dark-brown", "clueText": "dark brown hair" },
+      { "category": "light-brown", "clueText": "light brown hair" },
+      { "category": "blonde", "clueText": "blonde hair" },
+      { "category": "red-auburn", "clueText": "auburn-red hair" },
+      { "category": "silver-gray", "clueText": "silver-streaked hair" }
+    ],
+    "hairStyle": [
+      { "category": "short-cropped", "clueText": "short-cropped hair" },
+      { "category": "wavy-swept", "clueText": "wavy hair swept back" },
+      { "category": "curly", "clueText": "tight curls" },
+      { "category": "braids", "clueText": "neat braids" },
+      { "category": "ponytail-bun", "clueText": "hair tied back" },
+      { "category": "tousled", "clueText": "wind-tousled hair" }
+    ],
+    "eyeColor": [
+      { "category": "brown", "clueText": "dark brown eyes" },
+      { "category": "hazel", "clueText": "hazel eyes" },
+      { "category": "green", "clueText": "green eyes" },
+      { "category": "blue", "clueText": "bright blue eyes" },
+      { "category": "gray", "clueText": "slate-gray eyes" }
+    ]
+  },
+  "stylePools": {
+    "facialHair": [
+      { "category": "clean-shaven", "clueText": "clean-shaven face" },
+      { "category": "stubble", "clueText": "neat five-o'clock shadow" },
+      { "category": "handlebar-mustache", "clueText": "curled handlebar mustache" },
+      { "category": "walrus-mustache", "clueText": "thick walrus mustache" },
+      { "category": "goatee", "clueText": "trimmed goatee" },
+      { "category": "full-beard", "clueText": "neatly kept full beard" }
+    ],
+    "outfit": [
+      { "category": "trench-coat", "clueText": "belted trench coat" },
+      { "category": "sailor-sweater", "clueText": "chunky knit sweater" },
+      { "category": "tailored-suit", "clueText": "sharp tailored jacket" },
+      { "category": "winter-parka", "clueText": "insulated expedition parka" },
+      { "category": "field-vest", "clueText": "multi-pocket utility vest" },
+      { "category": "rain-mac", "clueText": "waterproof travel mac" }
+    ],
+    "accoutrements": [
+      { "category": "brass-compass", "clueText": "a gleaming brass compass" },
+      { "category": "tin-of-mints", "clueText": "a pocket tin of mints" },
+      { "category": "transit-pass-case", "clueText": "a worn leather rail-pass holder" },
+      { "category": "folding-umbrella", "clueText": "a compact folding umbrella" },
+      { "category": "field-sketchbook", "clueText": "a dog-eared pocket notebook" },
+      { "category": "messenger-satchel", "clueText": "a canvas messenger bag" },
+      { "category": "binoculars", "clueText": "compact field binoculars" },
+      { "category": "pocket-watch", "clueText": "a silver pocket watch" }
+    ]
+  }
+}

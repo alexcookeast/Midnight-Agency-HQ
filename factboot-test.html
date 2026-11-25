@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Factbook Test Page (Bare Bones)</title>
+</head>
+<body>
+  <h1>World Factbook — Bare-Bones Test</h1>
+
+  <div>
+    <label for="mode-select"><strong>Data Mode:</strong></label>
+    <select id="mode-select">
+      <option value="lite">Lite (Index + On-Demand Country)</option>
+      <option value="standard">Standard (Full Minified Bundle)</option>
+    </select>
+
+    &nbsp;&nbsp;
+
+    <label for="region-select"><strong>Region:</strong></label>
+    <select id="region-select">
+      <option value="">All Regions</option>
+    </select>
+
+    &nbsp;&nbsp;
+
+    <label for="search-input"><strong>Search (Name or Calling Code like +49):</strong></label>
+    <input id="search-input" type="text" placeholder="e.g. Germany, +81, Peru..." />
+  </div>
+
+  <p id="status-text">Initializing...</p>
+  <hr />
+
+  <table width="100%" cellpadding="8" cellspacing="0" border="1">
+    <tr>
+      <td width="35%" valign="top">
+        <h3>Countries</h3>
+        <div id="country-list"></div>
+      </td>
+      <td width="65%" valign="top">
+        <h3>Country Dossier</h3>
+        <div id="dossier">Select a country on the left.</div>
+      </td>
+    </tr>
+  </table>
+
+  <script type="module" src="./js/factbook-ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{
+  "crimeRings": {
+    "hosers": {
+      "id": "hosers",
+      "name": "The Hosers",
+      "motto": "Take off, eh—before the trail goes cold!",
+      "specialty": "Swiping famous landmarks, cold-weather gear, and cheeky winter capers",
+      "recruitingRoots": ["irish", "scandinavian", "mexican-central-american", "eastern-european"],
+      "tacticTags": ["cold-weather-gear", "bold-landmark", "overnight-rail"],
+      "homeHubs": [
+        { "city": "Winnipeg", "country": "Canada", "region": "Americas", "language": "English / French" },
+        { "city": "Thunder Bay", "country": "Canada", "region": "Americas", "language": "English" },
+        { "city": "Duluth", "country": "United States", "region": "Americas", "language": "English" },
+        { "city": "Anchorage", "country": "United States", "region": "Americas", "language": "English" },
+        { "city": "Dublin", "country": "Ireland", "region": "Europe", "language": "Irish / English" },
+        { "city": "Oslo", "country": "Norway", "region": "Europe", "language": "Norwegian" },
+        { "city": "Gothenburg", "country": "Sweden", "region": "Europe", "language": "Swedish" },
+        { "city": "Warsaw", "country": "Poland", "region": "Europe", "language": "Polish" }
+      ]
+    },
+    "night-shift": {
+      "id": "night-shift",
+      "name": "The Night Shift",
+      "motto": "Every lock has a story after midnight.",
+      "specialty": "Midnight museum heists, train timetables, and coded payphone relays",
+      "recruitingRoots": ["west-african", "japanese", "south-asian", "mediterranean-levant", "south-american"],
+      "tacticTags": ["late-night-window", "quiet-handling", "decoy-swap"],
+      "homeHubs": [
+        { "city": "Tokyo", "country": "Japan", "region": "Asia", "language": "Japanese" },
+        { "city": "Osaka", "country": "Japan", "region": "Asia", "language": "Japanese" },
+        { "city": "Lagos", "country": "Nigeria", "region": "Africa", "language": "English / Yoruba" },
+        { "city": "Dakar", "country": "Senegal", "region": "Africa", "language": "French / Wolof" },
+        { "city": "Mumbai", "country": "India", "region": "Asia", "language": "Marathi / Hindi" },
+        { "city": "Beirut", "country": "Lebanon", "region": "Mediterranean", "language": "Arabic / French" },
+        { "city": "Buenos Aires", "country": "Argentina", "region": "Americas", "language": "Spanish" },
+        { "city": "Santiago", "country": "Chile", "region": "Americas", "language": "Spanish" },
+        { "city": "Mexico City", "country": "Mexico", "region": "Americas", "language": "Spanish" },
+        { "city": "Reykjavik", "country": "Iceland", "region": "Europe", "language": "Icelandic" }
+      ]
+    }
+  }
+}

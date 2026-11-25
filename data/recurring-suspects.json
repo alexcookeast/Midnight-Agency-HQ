@@ -1,0 +1,79 @@
+{
+  "recurringSuspects": [
+    {
+      "id": "peter-cosgrove",
+      "ethnicity": "irish",
+      "firstName": "Peter",
+      "lastName": "Cosgrove",
+      "nickName": "Swarthy",
+      "nameDisplayMode": "nickname",
+      "displayName": "Peter 'Swarthy' Cosgrove",
+      "ringId": "hosers",
+      "recurring": true,
+      "isOutlier": false,
+      "origin": { "city": "Dublin", "country": "Ireland", "region": "Europe", "language": "Irish / English" },
+      "wardrobe": {
+        "outfit": { "category": "rain-mac", "clueText": "waterproof travel mac" },
+        "accoutrements": [{ "category": "tin-of-mints", "clueText": "a pocket tin of mints" }]
+      },
+      "appearance": {
+        "height": { "category": "tall", "cm": 188, "clueText": "very tall" },
+        "weight": { "category": "heavy", "clueText": "heavy-set" },
+        "build": { "category": "stocky", "clueText": "stocky and sturdy" },
+        "complexion": { "category": "olive", "clueText": "olive complexion" },
+        "hairColor": { "category": "dark-brown", "clueText": "dark brown hair" },
+        "hairStyle": { "category": "wavy-swept", "clueText": "wavy hair swept back" },
+        "eyeColor": { "category": "hazel", "clueText": "hazel eyes" }
+      },
+      "traits": [
+        "Always carries a folded street map and a tin of mints",
+        "Checks train departure boards before ordering a snack"
+      ],
+      "callStyle": {
+        "habit": "Makes quick calls from public payphones and hangs up fast",
+        "clueTemplates": [
+          "A brief call came through on a {callingCode} line—someone asked about trains leaving {capitalName}."
+        ]
+      },
+      "favoriteRegions": ["Europe", "Americas"]
+    },
+    {
+      "id": "tall-black-john",
+      "ethnicity": "west-african",
+      "firstName": "John",
+      "lastName": "Okafor",
+      "nickName": "Tall Black",
+      "nameDisplayMode": "mononym",
+      "displayName": "Tall Black John",
+      "ringId": "night-shift",
+      "recurring": true,
+      "isOutlier": true,
+      "backgroundNote": "A towering West African operative running with a crew tied to Irish republican circles—an unmistakable outlier.",
+      "origin": { "city": "Lagos", "country": "Nigeria", "region": "Africa", "language": "English / Yoruba" },
+      "wardrobe": {
+        "outfit": { "category": "trench-coat", "clueText": "belted trench coat" },
+        "accoutrements": [{ "category": "field-sketchbook", "clueText": "a dog-eared pocket notebook" }]
+      },
+      "appearance": {
+        "height": { "category": "tall", "cm": 201, "clueText": "very tall" },
+        "weight": { "category": "medium", "clueText": "average weight" },
+        "build": { "category": "lanky", "clueText": "long-limbed and lanky" },
+        "complexion": { "category": "deep-brown", "clueText": "deep brown complexion" },
+        "hairColor": { "category": "black", "clueText": "jet-black hair" },
+        "hairStyle": { "category": "short-cropped", "clueText": "short-cropped hair" },
+        "eyeColor": { "category": "brown", "clueText": "dark brown eyes" }
+      },
+      "traits": [
+        "Has to duck slightly under low archways",
+        "Keeps a pocket notebook of ferry and rail schedules"
+      ],
+      "callStyle": {
+        "habit": "Calls from hotel lobbies or station booths on tight schedules",
+        "clueTemplates": [
+          "An operator logged a call from a {callingCode} exchange asking about late departures near {capitalName}."
+        ]
+      },
+      "favoriteRegions": ["Europe", "Africa"]
+    }
+  ]
+}

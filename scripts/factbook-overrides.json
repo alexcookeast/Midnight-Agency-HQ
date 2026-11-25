@@ -1,0 +1,539 @@
+{
+  "CA": {
+    "primaryTimezone": "America/Toronto",
+    "majorCities": [
+      { "name": "Toronto", "lat": 43.6532, "lng": -79.3832 },
+      { "name": "Montreal", "lat": 45.5017, "lng": -73.5673 },
+      { "name": "Vancouver", "lat": 49.2827, "lng": -123.1207 },
+      { "name": "Calgary", "lat": 51.0447, "lng": -114.0719 }
+    ],
+    "population": {
+      "kidComparison": "About 1 out of every 200 people on Earth lives here, spread across the second-largest country in the world."
+    },
+    "geography": {
+      "climate": "Varies from temperate in the south to subarctic and arctic in the north, with cold snowy winters across much of the country."
+    },
+    "culture": {
+      "flag": {
+        "description": "Two vertical red bars framing a white square with a red 11-pointed maple leaf in the center."
+      },
+      "anthem": {
+        "title": "O Canada",
+        "summary": "Adopted in 1980, celebrating the country's vast northern landscape and freedom."
+      }
+    },
+    "economy": {
+      "exports": ["Crude petroleum", "Cars and auto parts", "Lumber and wood pulp", "Wheat and canola", "Maple syrup"],
+      "imports": ["Machinery", "Electronics", "Vehicles", "Pharmaceuticals"]
+    },
+    "exploration": {
+      "landmarks": ["Niagara Falls", "Banff National Park", "CN Tower", "Bay of Fundy"],
+      "wildlife": ["Beaver", "Moose", "Polar bear", "Canada goose", "Mourning dove"],
+      "didYouKnow": "Canada has more lakes than the rest of the world's lakes combined—over two million of them!"
+    },
+    "gameHooks": {
+      "clueTags": ["north-america", "english-speaking", "french-speaking", "snowy-winters", "maple-leaf-flag", "exports-maple-syrup", "coastal"],
+      "suspectNamePool": {
+        "firstNames": ["Liam", "Chloe", "Gord", "Marie", "Callum", "Sophie", "Caleb", "Claire"],
+        "lastNames": ["Tremblay", "MacLeod", "Bouchard", "Campbell", "Gagnon", "Fraser", "Roy", "Leblanc"]
+      },
+      "regionalTraits": [
+        "Carries a well-worn hockey puck as a lucky charm",
+        "Always orders a double-double coffee before boarding a flight",
+        "Wears a wool toque even indoors",
+        "Knows the tide schedule for the Bay of Fundy by heart"
+      ]
+    }
+  },
+  "US": {
+    "primaryTimezone": "America/New_York",
+    "majorCities": [
+      { "name": "New York City", "lat": 40.7128, "lng": -74.0060 },
+      { "name": "Los Angeles", "lat": 34.0522, "lng": -118.2437 },
+      { "name": "Chicago", "lat": 41.8781, "lng": -87.6298 },
+      { "name": "Houston", "lat": 29.7604, "lng": -95.3698 }
+    ],
+    "population": {
+      "kidComparison": "The third most populated country on Earth, with over 335 million people across 50 states."
+    },
+    "geography": {
+      "climate": "Mostly temperate, but spans tropical weather in Hawaii and Florida to arctic cold in Alaska and arid deserts in the southwest."
+    },
+    "culture": {
+      "flag": {
+        "description": "13 red and white stripes with a blue rectangle in the top corner holding 50 white stars."
+      },
+      "anthem": {
+        "title": "The Star-Spangled Banner",
+        "summary": "Written during the War of 1812 after watching a flag survive an overnight bombardment."
+      }
+    },
+    "economy": {
+      "exports": ["Refined petroleum", "Aircraft and spacecraft", "Electronics", "Cars", "Soybeans and corn"],
+      "imports": ["Cars", "Computers and electronics", "Crude oil", "Pharmaceuticals"]
+    },
+    "exploration": {
+      "landmarks": ["Grand Canyon", "Statue of Liberty", "Yellowstone National Park", "Golden Gate Bridge"],
+      "wildlife": ["Bald eagle", "American bison", "Grizzly bear", "Alligator"],
+      "didYouKnow": "Yellowstone was the world's very first national park, established in 1872."
+    },
+    "gameHooks": {
+      "clueTags": ["north-america", "english-speaking", "stars-and-stripes", "50-states", "grand-canyon"],
+      "suspectNamePool": {
+        "firstNames": ["Mason", "Harper", "Wyatt", "Evelyn", "Logan", "Scarlett", "Caleb", "Hazel"],
+        "lastNames": ["Miller", "Davis", "Wilson", "Taylor", "Anderson", "Thomas", "Moore", "Jackson"]
+      },
+      "regionalTraits": [
+        "Collects souvenir state quarters in a velvet pouch",
+        "Never travels without a vintage baseball cap",
+        "Reads road atlases instead of using GPS"
+      ]
+    }
+  },
+  "PE": {
+    "primaryTimezone": "America/Lima",
+    "majorCities": [
+      { "name": "Lima", "lat": -12.0464, "lng": -77.0428 },
+      { "name": "Cusco", "lat": -13.5319, "lng": -71.9675 },
+      { "name": "Arequipa", "lat": -16.4090, "lng": -71.5375 }
+    ],
+    "population": {
+      "kidComparison": "About 34 million people live here—roughly the same population as California."
+    },
+    "geography": {
+      "climate": "Dry desert along the Pacific coast, cool high mountains in the Andes, and hot, rainy tropical rainforest in the Amazon basin."
+    },
+    "culture": {
+      "flag": {
+        "description": "Three vertical bands of red, white, and red."
+      },
+      "anthem": {
+        "title": "Himno Nacional del Perú",
+        "summary": "Composed in 1821 to celebrate Peru's independence."
+      }
+    },
+    "economy": {
+      "exports": ["Copper and gold", "Zinc", "Coffee", "Blueberries and avocados", "Fishmeal"],
+      "imports": ["Refined petroleum", "Vehicles", "Electronics", "Machinery"]
+    },
+    "exploration": {
+      "landmarks": ["Machu Picchu", "Nazca Lines", "Lake Titicaca", "Sacred Valley"],
+      "wildlife": ["Llama", "Alpaca", "Andean condor", "Spectacled bear", "Jaguar"],
+      "didYouKnow": "Potatoes were first domesticated in the Andes Mountains of Peru thousands of years ago—there are over 3,000 varieties there today!"
+    },
+    "gameHooks": {
+      "clueTags": ["south-america", "spanish-speaking", "andes-mountains", "amazon-rainforest", "machu-picchu", "exports-copper"],
+      "suspectNamePool": {
+        "firstNames": ["Mateo", "Valentina", "Santiago", "Camila", "Diego", "Lucia", "Carlos", "Sofia"],
+        "lastNames": ["Quispe", "Flores", "Huaman", "Rojas", "Mendoza", "Chavez", "Vargas", "Castillo"]
+      },
+      "regionalTraits": [
+        "Wears a brightly patterned woven Andean scarf",
+        "Always carries roasted corn snacks in their coat pocket",
+        "Speaks fluently about ancient Inca stone masonry"
+      ]
+    }
+  },
+  "BR": {
+    "primaryTimezone": "America/Sao_Paulo",
+    "majorCities": [
+      { "name": "São Paulo", "lat": -23.5505, "lng": -46.6333 },
+      { "name": "Rio de Janeiro", "lat": -22.9068, "lng": -43.1729 },
+      { "name": "Brasília", "lat": -15.7975, "lng": -47.8919 },
+      { "name": "Manaus", "lat": -3.1190, "lng": -60.0217 }
+    ],
+    "population": {
+      "kidComparison": "Over 215 million people live here—nearly half of all people in South America!"
+    },
+    "geography": {
+      "climate": "Mostly tropical and warm year-round, with lush rainforests in the north and cooler subtropical weather in the far south."
+    },
+    "culture": {
+      "flag": {
+        "description": "A green background with a large yellow diamond in the center holding a blue globe studded with 27 white stars."
+      },
+      "anthem": {
+        "title": "Hino Nacional Brasileiro",
+        "summary": "Celebrates Brazil's rivers, forests, and sunny skies."
+      }
+    },
+    "economy": {
+      "exports": ["Soybeans", "Iron ore", "Crude petroleum", "Sugar and coffee", "Poultry"],
+      "imports": ["Machinery", "Electronics", "Chemical products", "Vehicle parts"]
+    },
+    "exploration": {
+      "landmarks": ["Amazon River", "Iguazu Falls", "Sugarloaf Mountain", "Pantanal Wetlands"],
+      "wildlife": ["Toucan", "Capybara", "Macaw", "Jaguar", "Pink river dolphin"],
+      "didYouKnow": "The Amazon River carries more water than the next seven largest rivers in the world combined."
+    },
+    "gameHooks": {
+      "clueTags": ["south-america", "portuguese-speaking", "amazon-rainforest", "exports-coffee", "tropical"],
+      "suspectNamePool": {
+        "firstNames": ["Lucas", "Helena", "Gabriel", "Alice", "Pedro", "Laura", "Rafael", "Beatriz"],
+        "lastNames": ["Silva", "Santos", "Oliveira", "Souza", "Pereira", "Costa", "Ferreira", "Almeida"]
+      },
+      "regionalTraits": [
+        "Humms samba rhythms while waiting in airport lounges",
+        "Carries a miniature soccer ball everywhere",
+        "Knows the names of dozens of tropical rainforest birds"
+      ]
+    }
+  },
+  "DE": {
+    "primaryTimezone": "Europe/Berlin",
+    "majorCities": [
+      { "name": "Berlin", "lat": 52.5200, "lng": 13.4050 },
+      { "name": "Munich", "lat": 48.1351, "lng": 11.5820 },
+      { "name": "Hamburg", "lat": 53.5511, "lng": 9.9937 },
+      { "name": "Frankfurt", "lat": 50.1109, "lng": 8.6821 }
+    ],
+    "population": {
+      "kidComparison": "Around 84 million people live here—the largest population of any country in the European Union."
+    },
+    "geography": {
+      "climate": "Temperate seasonal climate with cool, cloudy winters and mild, pleasant summers."
+    },
+    "culture": {
+      "flag": {
+        "description": "Three horizontal stripes of black, red, and gold."
+      },
+      "anthem": {
+        "title": "Deutschlandlied",
+        "summary": "Set to music composed by Joseph Haydn in 1797, focusing on unity, justice, and freedom."
+      }
+    },
+    "economy": {
+      "exports": ["Cars and vehicle parts", "Machinery", "Pharmaceuticals", "Electronics", "Medical instruments"],
+      "imports": ["Electronics", "Vehicles", "Oil and natural gas", "Pharmaceuticals"]
+    },
+    "exploration": {
+      "landmarks": ["Brandenburg Gate", "Neuschwanstein Castle", "Black Forest", "Cologne Cathedral"],
+      "wildlife": ["Red squirrel", "Wild boar", "European badger", "White stork"],
+      "didYouKnow": "Germany has over 20,000 castles—many of which inspired classic fairy tales!"
+    },
+    "gameHooks": {
+      "clueTags": ["europe", "german-speaking", "exports-cars", "castles", "black-forest"],
+      "suspectNamePool": {
+        "firstNames": ["Lukas", "Hannah", "Felix", "Mia", "Jonas", "Emma", "Leon", "Lena"],
+        "lastNames": ["Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer", "Wagner", "Becker"]
+      },
+      "regionalTraits": [
+        "Checks a mechanical pocket watch to the exact second",
+        "Always buys a warm pretzel at train stations",
+        "Keeps a notebook filled with neatly drawn train timetables"
+      ]
+    }
+  },
+  "GB": {
+    "primaryTimezone": "Europe/London",
+    "majorCities": [
+      { "name": "London", "lat": 51.5072, "lng": -0.1276 },
+      { "name": "Edinburgh", "lat": 55.9533, "lng": -3.1883 },
+      { "name": "Manchester", "lat": 53.4808, "lng": -2.2426 },
+      { "name": "Cardiff", "lat": 51.4816, "lng": -3.1791 }
+    ],
+    "population": {
+      "kidComparison": "About 68 million people live across England, Scotland, Wales, and Northern Ireland."
+    },
+    "geography": {
+      "climate": "Mild, rainy maritime climate—weather can change from sunshine to drizzle in a single afternoon."
+    },
+    "culture": {
+      "flag": {
+        "description": "The Union Jack: red and white crosses overlapping on a dark blue background."
+      },
+      "anthem": {
+        "title": "God Save the King",
+        "summary": "One of the oldest national anthems in the world, dating back to the 1740s."
+      }
+    },
+    "economy": {
+      "exports": ["Machinery and jet engines", "Cars", "Pharmaceuticals", "Financial services", "Gold"],
+      "imports": ["Cars", "Electronics", "Refined petroleum", "Clothing and food"]
+    },
+    "exploration": {
+      "landmarks": ["Big Ben", "Stonehenge", "Tower of London", "Edinburgh Castle"],
+      "wildlife": ["Red fox", "Hedgehog", "Puffin", "Barn owl"],
+      "didYouKnow": "London's Underground, opened in 1863, is the oldest underground passenger railway in the world."
+    },
+    "gameHooks": {
+      "clueTags": ["europe", "english-speaking", "island-nation", "drives-on-left", "union-jack", "rainy-climate"],
+      "suspectNamePool": {
+        "firstNames": ["Oliver", "Amelia", "Arthur", "Isla", "George", "Freya", "Harry", "Poppy"],
+        "lastNames": ["Smith", "Jones", "Taylor", "Brown", "Williams", "Davies", "Evans", "Wright"]
+      },
+      "regionalTraits": [
+        "Never leaves home without a tightly rolled umbrella",
+        "Looks right before crossing the street out of habit",
+        "Carries loose tea leaves in a small silver tin"
+      ]
+    }
+  },
+  "FR": {
+    "primaryTimezone": "Europe/Paris",
+    "majorCities": [
+      { "name": "Paris", "lat": 48.8566, "lng": 2.3522 },
+      { "name": "Lyon", "lat": 45.7640, "lng": 4.8357 },
+      { "name": "Marseille", "lat": 43.2965, "lng": 5.3698 }
+    ],
+    "population": {
+      "kidComparison": "About 68 million people live in France, the largest country by land area in Western Europe."
+    },
+    "geography": {
+      "climate": "Cool winters and mild summers in the north, snowy mountains in the Alps, and warm sunny weather along the Mediterranean coast."
+    },
+    "culture": {
+      "flag": {
+        "description": "Three vertical bands of blue, white, and red."
+      },
+      "anthem": {
+        "title": "La Marseillaise",
+        "summary": "Written in 1792, known around the world for its energetic, marching melody."
+      }
+    },
+    "economy": {
+      "exports": ["Aircraft and helicopters", "Pharmaceuticals", "Perfumes and cosmetics", "Cheese and baked goods", "Cars"],
+      "imports": ["Machinery", "Vehicles", "Crude oil", "Electronics"]
+    },
+    "exploration": {
+      "landmarks": ["Eiffel Tower", "Louvre Museum", "Mont Saint-Michel", "French Alps"],
+      "wildlife": ["Ibex", "Flamingo", "Red deer", "Eurasian lynx"],
+      "didYouKnow": "The Eiffel Tower actually grows about 15 centimeters (6 inches) taller in the summer because heat makes the iron expand!"
+    },
+    "gameHooks": {
+      "clueTags": ["europe", "french-speaking", "eiffel-tower", "exports-aircraft", "coastal"],
+      "suspectNamePool": {
+        "firstNames": ["Louis", "Camille", "Gabriel", "Chloé", "Hugo", "Manon", "Jules", "Léa"],
+        "lastNames": ["Martin", "Bernard", "Dubois", "Moreau", "Laurent", "Simon", "Michel", "Lefebvre"]
+      },
+      "regionalTraits": [
+        "Sketches landmarks in a tiny pocket sketchbook",
+        "Can identify dozens of cheeses by smell alone",
+        "Always wears a neatly knotted scarf"
+      ]
+    }
+  },
+  "JP": {
+    "primaryTimezone": "Asia/Tokyo",
+    "majorCities": [
+      { "name": "Tokyo", "lat": 35.6762, "lng": 139.6503 },
+      { "name": "Osaka", "lat": 34.6937, "lng": 135.5023 },
+      { "name": "Kyoto", "lat": 35.0116, "lng": 135.7681 },
+      { "name": "Sapporo", "lat": 43.0618, "lng": 141.3545 }
+    ],
+    "population": {
+      "kidComparison": "Around 124 million people live across Japan's islands—Tokyo is the world's largest city area."
+    },
+    "geography": {
+      "climate": "Varies from cool and snowy in northern Hokkaido to warm and subtropical in southern Okinawa, with four distinct seasons."
+    },
+    "culture": {
+      "flag": {
+        "description": "A white background with a large crimson-red circle representing the sun in the center."
+      },
+      "anthem": {
+        "title": "Kimigayo",
+        "summary": "Features lyrics from a 1,000-year-old poem wishing for long-lasting peace and harmony."
+      }
+    },
+    "economy": {
+      "exports": ["Cars and hybrid vehicles", "Robotics and machinery", "Microchips and electronics", "Precision cameras"],
+      "imports": ["Crude petroleum and natural gas", "Electronics", "Coal", "Food and seafood"]
+    },
+    "exploration": {
+      "landmarks": ["Mount Fuji", "Fushimi Inari Shrine", "Tokyo Skytree", "Himeji Castle"],
+      "wildlife": ["Japanese macaque (snow monkey)", "Red-crowned crane", "Tanuki", "Giant salamander"],
+      "didYouKnow": "Japan's Shinkansen bullet trains can travel up to 320 km/h (200 mph) and are famous for arriving within seconds of their schedule."
+    },
+    "gameHooks": {
+      "clueTags": ["asia", "japanese-speaking", "island-nation", "drives-on-left", "mount-fuji", "exports-robotics", "bullet-trains"],
+      "suspectNamePool": {
+        "firstNames": ["Haruto", "Yui", "Ren", "Hina", "Sota", "Aoi", "Kaito", "Sakura"],
+        "lastNames": ["Sato", "Suzuki", "Takahashi", "Tanaka", "Watanabe", "Ito", "Yamamoto", "Nakamura"]
+      },
+      "regionalTraits": [
+        "Folds origami cranes out of old boarding passes",
+        "Collects colorful ink stamps from every train station",
+        "Carries a high-tech solar-powered calculator"
+      ]
+    }
+  },
+  "IN": {
+    "primaryTimezone": "Asia/Kolkata",
+    "majorCities": [
+      { "name": "New Delhi", "lat": 28.6139, "lng": 77.2090 },
+      { "name": "Mumbai", "lat": 19.0760, "lng": 72.8777 },
+      { "name": "Bengaluru", "lat": 12.9716, "lng": 77.5946 },
+      { "name": "Kolkata", "lat": 22.5726, "lng": 88.3639 }
+    ],
+    "population": {
+      "kidComparison": "Over 1.4 billion people live here—the largest population of any country in the world!"
+    },
+    "geography": {
+      "climate": "Tropical monsoon climate in the south, warm plains in the center, and snow-capped Himalayan peaks in the far north."
+    },
+    "culture": {
+      "flag": {
+        "description": "Horizontal stripes of saffron orange, white, and green with a 24-spoke navy blue wheel in the center."
+      },
+      "anthem": {
+        "title": "Jana Gana Mana",
+        "summary": "Written by poet Rabindranath Tagore, celebrating India's diverse regions, rivers, and mountains."
+      }
+    },
+    "economy": {
+      "exports": ["Refined petroleum", "Diamonds and jewelry", "Pharmaceuticals", "Rice and spices", "Software services"],
+      "imports": ["Crude oil", "Gold and silver", "Electronics", "Machinery"]
+    },
+    "exploration": {
+      "landmarks": ["Taj Mahal", "Himalayas", "Jaipur's Hawa Mahal", "Ganges River"],
+      "wildlife": ["Bengal tiger", "Asian elephant", "Indian peafowl (peacock)", "One-horned rhinoceros"],
+      "didYouKnow": "The game of chess was invented in India over 1,400 years ago!"
+    },
+    "gameHooks": {
+      "clueTags": ["asia", "hindi-speaking", "english-speaking", "drives-on-left", "taj-mahal", "himalayas", "exports-spices"],
+      "suspectNamePool": {
+        "firstNames": ["Aarav", "Ananya", "Vihaan", "Diya", "Arjun", "Aadhya", "Rohan", "Kavya"],
+        "lastNames": ["Sharma", "Patel", "Singh", "Kumar", "Gupta", "Reddy", "Nair", "Iyer"]
+      },
+      "regionalTraits": [
+        "Always carries a pocket chessboard for long flights",
+        "Can name every spice in a dish from across the room",
+        "Keeps a lucky brass compass in their jacket"
+      ]
+    }
+  },
+  "EG": {
+    "primaryTimezone": "Africa/Cairo",
+    "majorCities": [
+      { "name": "Cairo", "lat": 30.0444, "lng": 31.2357 },
+      { "name": "Alexandria", "lat": 31.2001, "lng": 29.9187 },
+      { "name": "Luxor", "lat": 25.6872, "lng": 32.6396 }
+    ],
+    "population": {
+      "kidComparison": "Around 114 million people live here—almost everyone lives along the green ribbon of the Nile River."
+    },
+    "geography": {
+      "climate": "Hot, sunny desert climate with very little rain, cooled along the Mediterranean coast and the Nile valley."
+    },
+    "culture": {
+      "flag": {
+        "description": "Horizontal stripes of red, white, and black with a golden eagle emblem in the center."
+      },
+      "anthem": {
+        "title": "Bilady, Bilady, Bilady",
+        "summary": "Means 'My Homeland, My Homeland, My Homeland,' celebrating loyalty to Egypt."
+      }
+    },
+    "economy": {
+      "exports": ["Natural gas and petroleum", "Citrus fruits and cotton", "Fertilizers", "Textiles"],
+      "imports": ["Wheat and grain", "Machinery", "Vehicles", "Electronics"]
+    },
+    "exploration": {
+      "landmarks": ["Great Pyramids of Giza", "Great Sphinx", "Nile River", "Suez Canal"],
+      "wildlife": ["Dromedary camel", "Nile crocodile", "Fennec fox", "Sacred ibis"],
+      "didYouKnow": "The Great Pyramid of Giza was the tallest human-made structure on Earth for over 3,800 years!"
+    },
+    "gameHooks": {
+      "clueTags": ["africa", "middle-east", "arabic-speaking", "desert-climate", "pyramids", "nile-river", "suez-canal"],
+      "suspectNamePool": {
+        "firstNames": ["Omar", "Nour", "Youssef", "Mariam", "Kareem", "Salma", "Tariq", "Layla"],
+        "lastNames": ["Hassan", "Ibrahim", "Mahmoud", "Mansour", "Farouk", "Nasser", "Soliman", "Zaki"]
+      },
+      "regionalTraits": [
+        "Decodes ancient hieroglyph symbols for fun",
+        "Always wears sunglasses and a wide-brimmed sun hat",
+        "Knows every ship route through the Suez Canal"
+      ]
+    }
+  },
+  "KE": {
+    "primaryTimezone": "Africa/Nairobi",
+    "majorCities": [
+      { "name": "Nairobi", "lat": -1.2921, "lng": 36.8219 },
+      { "name": "Mombasa", "lat": -4.0435, "lng": 39.6682 },
+      { "name": "Kisumu", "lat": -0.0917, "lng": 34.7680 }
+    ],
+    "population": {
+      "kidComparison": "About 55 million people live here, right across the Earth's Equator."
+    },
+    "geography": {
+      "climate": "Warm and tropical along the Indian Ocean coast, and cooler with sunny days and crisp nights in the central highlands."
+    },
+    "culture": {
+      "flag": {
+        "description": "Black, red, and green horizontal stripes separated by thin white lines, with a traditional Maasai shield and crossed spears in the center."
+      },
+      "anthem": {
+        "title": "Ee Mungu Nguvu Yetu",
+        "summary": "Swahili for 'O God of All Creation,' a prayer for peace, unity, and plenty."
+      }
+    },
+    "economy": {
+      "exports": ["Tea", "Cut flowers", "Coffee", "Avocados", "Textiles"],
+      "imports": ["Refined petroleum", "Machinery", "Vehicles", "Iron and steel"]
+    },
+    "exploration": {
+      "landmarks": ["Maasai Mara Reserve", "Mount Kenya", "Great Rift Valley", "Lake Victoria"],
+      "wildlife": ["African lion", "African elephant", "Giraffe", "Zebra", "Cheetah"],
+      "didYouKnow": "Nairobi is the only capital city in the world with a full wildlife national park right next to its skyscrapers!"
+    },
+    "gameHooks": {
+      "clueTags": ["africa", "swahili-speaking", "english-speaking", "drives-on-left", "equator", "exports-tea", "safari-wildlife"],
+      "suspectNamePool": {
+        "firstNames": ["Juma", "Amina", "Kamau", "Zuri", "Otieno", "Wanjiku", "Baraka", "Neema"],
+        "lastNames": ["Mwangi", "Ochieng", "Njoroge", "Kariuki", "Mutua", "Wekesa", "Kimani", "Omondi"]
+      },
+      "regionalTraits": [
+        "Carries compact binoculars around their neck at all times",
+        "Can sprint like a marathon runner when spotted",
+        "Always drinks hot spiced chai tea"
+      ]
+    }
+  },
+  "AU": {
+    "primaryTimezone": "Australia/Sydney",
+    "majorCities": [
+      { "name": "Sydney", "lat": -33.8688, "lng": 151.2093 },
+      { "name": "Melbourne", "lat": -37.8136, "lng": 144.9631 },
+      { "name": "Brisbane", "lat": -27.4705, "lng": 153.0260 },
+      { "name": "Perth", "lat": -31.9505, "lng": 115.8605 }
+    ],
+    "population": {
+      "kidComparison": "About 27 million people live across an entire continent—nearly the same size as the continental United States!"
+    },
+    "geography": {
+      "climate": "Hot dry desert in the central Outback, tropical in the north, and mild temperate seasons along the southern coasts."
+    },
+    "culture": {
+      "flag": {
+        "description": "Dark blue with the Union Jack in the top corner, a large seven-pointed star below it, and the five stars of the Southern Cross."
+      },
+      "anthem": {
+        "title": "Advance Australia Fair",
+        "summary": "Celebrates Australia's wide lands, golden soil, and surrounding seas."
+      }
+    },
+    "economy": {
+      "exports": ["Iron ore", "Coal and natural gas", "Gold", "Wheat", "Wool"],
+      "imports": ["Cars", "Refined petroleum", "Electronics", "Machinery"]
+    },
+    "exploration": {
+      "landmarks": ["Great Barrier Reef", "Sydney Opera House", "Uluru", "Twelve Apostles"],
+      "wildlife": ["Kangaroo", "Koala", "Platypus", "Wombat", "Kookaburra"],
+      "didYouKnow": "Australia is home to more kangaroos than people—and it is the only place on Earth where the egg-laying platypus lives in the wild!"
+    },
+    "gameHooks": {
+      "clueTags": ["oceania", "english-speaking", "island-continent", "drives-on-left", "southern-hemisphere", "great-barrier-reef", "kangaroos"],
+      "suspectNamePool": {
+        "firstNames": ["Jack", "Charlotte", "Noah", "Isla", "Lachlan", "Mia", "Liam", "Ruby"],
+        "lastNames": ["Smith", "Jones", "Williams", "Brown", "Wilson", "Taylor", "Campbell", "Kelly"]
+      },
+      "regionalTraits": [
+        "Wears a wide cork-brimmed bush hat",
+        "Navigates at night using the Southern Cross stars",
+        "Always carries a jar of Vegemite in their suitcase"
+      ]
+    }
+  }
+}
