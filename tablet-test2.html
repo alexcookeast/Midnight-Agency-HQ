@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablet Check</title>
+<style>
+  body{margin:0;background:#14102B;color:#F6F2FF;font-family:system-ui,Arial,sans-serif;line-height:1.4}
+  main{max-width:640px;margin:0 auto;padding:16px}
+  h1{font-size:26px;margin:8px 0}
+  p.lead{color:#B9B0DD;margin:0 0 16px}
+  .card{background:#221A45;border-radius:16px;padding:14px 16px;margin-bottom:12px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .name{font-weight:700;font-size:17px}
+  .pill{border-radius:999px;padding:4px 12px;font-weight:800;font-size:13px;background:#3B2F70;color:#F6F2FF;white-space:nowrap}
+  .pass{background:#6BF2C8;color:#14102B}
+  .fail{background:#FF5FA2;color:#14102B}
+  .check{background:#FFD76B;color:#14102B}
+  .detail{color:#B9B0DD;font-size:14px;margin-top:6px}
+  label.lbl{display:block;font-weight:700;font-size:14px;color:#F6F2FF;margin-top:8px;margin-bottom:4px}
+  input[type="email"]{width:100%;box-sizing:border-box;min-height:44px;border-radius:12px;border:2px solid #3B2F70;background:#0B0820;color:#F6F2FF;font-size:15px;padding:0 12px}
+  button{min-height:48px;border-radius:999px;border:none;background:#6BF2C8;color:#14102B;font-weight:800;font-size:16px;padding:0 20px;margin:8px 8px 0 0;cursor:pointer}
+  button.alt{background:#2D2359;color:#F6F2FF}
+  textarea{width:100%;box-sizing:border-box;min-height:190px;border-radius:12px;border:2px solid #3B2F70;background:#0B0820;color:#6BF2C8;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;padding:10px;margin-top:10px}
+  canvas{width:100%;max-width:320px;height:80px;border-radius:12px;background:#0B0820;display:block;margin-top:8px}
+  .vlist{margin-top:8px;padding:8px 10px;border-radius:12px;background:#0B0820;color:#B9B0DD;font-size:13px;max-height:150px;overflow-y:auto}
+  .vitem{padding:3px 0;border-bottom:1px dotted #2D2359}
+  .vitem:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<main>
+  <h1>Tablet Check</h1>
+  <p class="lead">Go through each box. When you finish, email or copy the results box at the bottom.</p>
+
+  <div class="card"><div class="row"><div class="name">1. Page loads</div><div class="pill pass" id="s1">Pass</div></div>
+    <div class="detail">If you can read this, the browser can open the page.</div></div>
+
+  <div class="card"><div class="row"><div class="name">2. Saves progress</div><div class="pill" id="s2">...</div></div>
+    <div class="detail" id="d2">Checking.</div></div>
+
+  <div class="card"><div class="row"><div class="name">3. Works offline</div><div class="pill" id="s3">...</div></div>
+    <div class="detail" id="d3">Checking.</div>
+    <div class="detail">Then: turn on airplane mode and reload this page. Does it still open? Tell the app builder.</div>
+    <button class="alt" id="offYes" type="button">It still opened</button><button class="alt" id="offNo" type="button">It did not open</button></div>
+
+  <div class="card"><div class="row"><div class="name">4. Home screen shortcut</div><div class="pill" id="s4">...</div></div>
+    <div class="detail" id="d4">Checking.</div>
+    <div class="detail">Open the browser's menu (usually three dots or lines). Is there an option like "Add to Home screen" or "Add shortcut"?</div>
+    <button class="alt" id="hsYes" type="button">Yes, there is</button><button class="alt" id="hsNo" type="button">No</button></div>
+
+  <div class="card"><div class="row"><div class="name">5. Sound</div><div class="pill" id="s5">Check</div></div>
+    <div class="detail">Turn the tablet volume low, then press the button.</div>
+    <button id="beep" type="button">Play a soft beep</button>
+    <button class="alt" id="beepYes" type="button">I heard it</button><button class="alt" id="beepNo" type="button">No sound</button></div>
+
+  <div class="card"><div class="row"><div class="name">6. Animation speed</div><div class="pill" id="s6">...</div></div>
+    <div class="detail" id="d6">Running a 3-second test.</div>
+    <canvas id="cv" width="640" height="160"></canvas></div>
+
+  <div class="card"><div class="row"><div class="name">7. Screen</div><div class="pill pass">Info</div></div>
+    <div class="detail" id="d7"></div></div>
+
+  <div class="card"><div class="row"><div class="name">8. Talking voices</div><div class="pill" id="s8">...</div></div>
+    <div class="detail" id="d8">Checking talking voices.</div>
+    <button id="ttsBtn" type="button">Test talking voice</button>
+    <button class="alt" id="ttsRefresh" type="button">Refresh voices</button>
+    <div class="vlist" id="vlist">Checking...</div></div>
+
+  <div class="card"><div class="row"><div class="name">Results</div><div class="pill pass">Email / Copy</div></div>
+    <div class="detail">Tap Email results to open your email app with the report pre-filled, or copy it.</div>
+    <label class="lbl" for="emailTo">Your email address (saved on this device)</label>
+    <input id="emailTo" type="email" placeholder="you@example.com" autocomplete="email">
+    <button id="emailBtn" type="button">Email results</button>
+    <button class="alt" id="copyBtn" type="button">Copy results</button>
+    <div class="detail" id="emailStatus"></div>
+    <textarea id="out" readonly></textarea></div>
+</main>
+
+<script>
+(function () {
+  var R = {};
+  var EMAIL_KEY = 'tabletcheck_email_to';
+  function $(id){ return document.getElementById(id); }
+  function setStatus(n, kind, label, detail) {
+    var p = $('s' + n);
+    p.className = 'pill ' + kind;
+    p.textContent = label;
+    if (detail !== undefined && $('d' + n)) { $('d' + n).textContent = detail; }
+  }
+  function report(key, value) {
+    R[key] = value;
+    var lines = ['Tablet Check results'];
+    lines.push('Page loads: yes');
+    for (var k in R) { lines.push(k + ': ' + R[k]); }
+    lines.push('Screen: ' + window.innerWidth + 'x' + window.innerHeight + ' at ' + window.devicePixelRatio + 'x');
+    lines.push('Browser: ' + navigator.userAgent);
+    lines.push('Secure page (https): ' + window.isSecureContext);
+    $('out').value = lines.join('
+');
+  }
+
+  // 2. saved data
+  try {
+    localStorage.setItem('tabletcheck', 'ok');
+    var ok = localStorage.getItem('tabletcheck') === 'ok';
+    setStatus(2, ok ? 'pass' : 'fail', ok ? 'Pass' : 'Fail', ok ? 'The browser can save progress.' : 'Saving did not work.');
+    report('Saves progress', ok ? 'yes' : 'no');
+  } catch (e) {
+    setStatus(2, 'fail', 'Fail', 'Saving is blocked: ' + e.message);
+    report('Saves progress', 'blocked');
+  }
+
+  // 3. offline support
+  if ('serviceWorker' in navigator && window.isSecureContext) {
+    navigator.serviceWorker.register('sw.js').then(function () {
+      return navigator.serviceWorker.ready;
+    }).then(function () {
+      setStatus(3, 'pass', 'Likely', 'Offline copy saved. Now try the airplane mode test below.');
+      report('Offline support', 'registered');
+    }).catch(function (e) {
+      setStatus(3, 'fail', 'Fail', 'Could not set up offline mode: ' + e.message);
+      report('Offline support', 'failed');
+    });
+  } else {
+    setStatus(3, 'fail', 'Not available', 'This browser or address does not allow offline mode (needs a secure https address).');
+    report('Offline support', 'not available');
+  }
+  $('offYes').onclick = function () { report('Opened in airplane mode', 'yes'); };
+  $('offNo').onclick = function () { report('Opened in airplane mode', 'no'); };
+
+  // 4. home screen
+  var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+  if (standalone) {
+    setStatus(4, 'pass', 'Pass', 'This page is running as an installed app.');
+    report('Running as installed app', 'yes');
+  } else {
+    setStatus(4, 'check', 'Check', 'Running in the normal browser.');
+    report('Running as installed app', 'no (normal browser)');
+  }
+  $('hsYes').onclick = function () { setStatus(4, 'pass', 'Yes', 'Add-to-home-screen option exists.'); report('Add to home screen option', 'yes'); };
+  $('hsNo').onclick = function () { setStatus(4, 'fail', 'No', 'No add-to-home-screen option.'); report('Add to home screen option', 'no'); };
+
+  // 5. sound
+  var ctx;
+  $('beep').onclick = function () {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      ctx = ctx || new AC();
+      if (ctx.state === 'suspended') { ctx.resume(); }
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 660;
+      gain.gain.value = 0.05;
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.25);
+    } catch (e) { setStatus(5, 'fail', 'Fail', ''); report('Sound', 'error: ' + e.message); }
+  };
+  $('beepYes').onclick = function () { setStatus(5, 'pass', 'Pass'); report('Sound', 'heard it'); };
+  $('beepNo').onclick = function () { setStatus(5, 'fail', 'No sound'); report('Sound', 'not heard'); };
+
+  // 6. animation speed
+  var cv = $('cv'), g = cv.getContext('2d');
+  var start = null, frames = 0;
+  function tick(t) {
+    if (start === null) { start = t; }
+    frames++;
+    g.clearRect(0, 0, 640, 160);
+    for (var i = 0; i < 40; i++) {
+      var x = (t / 6 + i * 37) % 700 - 30;
+      var y = 80 + Math.sin(t / 300 + i) * 50;
+      g.fillStyle = i % 2 ? '#6BF2C8' : '#FF5FA2';
+      g.beginPath(); g.arc(x, y, 10, 0, 6.283); g.fill();
+    }
+    if (t - start < 3000) { requestAnimationFrame(tick); }
+    else {
+      var fps = Math.round(frames / ((t - start) / 1000));
+      var kind = fps >= 45 ? 'pass' : (fps >= 25 ? 'check' : 'fail');
+      var verdict = fps >= 45 ? 'Smooth' : (fps >= 25 ? 'OK' : 'Slow');
+      setStatus(6, kind, verdict, 'About ' + fps + ' frames per second.');
+      report('Animation speed', fps + ' fps (' + verdict + ')');
+    }
+  }
+  requestAnimationFrame(tick);
+
+  // 7. screen info
+  $('d7').textContent = window.innerWidth + ' x ' + window.innerHeight + ' pixels, ' + window.devicePixelRatio + 'x. ' + navigator.userAgent;
+  report('Started', 'ok');
+
+  // 8. talking voices
+  var hasTTS = ('speechSynthesis' in window) && typeof window.speechSynthesis.getVoices === 'function';
+  var voices = [];
+
+  function scanVoices() {
+    if (!hasTTS) {
+      setStatus(8, 'fail', 'No', 'This browser does not support talking voices.');
+      $('vlist').textContent = 'speechSynthesis not available.';
+      report('Talking voices', 'not supported');
+      return;
+    }
+    voices = window.speechSynthesis.getVoices() || [];
+    if (!voices.length) {
+      setStatus(8, 'check', '0 found', 'No voices listed yet. Tap "Refresh voices" or "Test talking voice".');
+      $('vlist').textContent = 'No voices reported yet.';
+      report('Talking voices', '0 voices');
+      return;
+    }
+    setStatus(8, 'pass', voices.length + ' found', 'Found ' + voices.length + ' voice(s).');
+    $('vlist').innerHTML = voices.map(function (v, idx) {
+      return '<div class="vitem">' + (idx + 1) + '. <strong>' + v.name + '</strong> (' + v.lang + ')' + (v.default ? ' [default]' : '') + '</div>';
+    }).join('');
+    report('Talking voices', voices.length + ': ' + voices.map(function (v) { return v.name + ' [' + v.lang + ']'; }).join(', '));
+  }
+
+  $('ttsRefresh').onclick = scanVoices;
+
+  $('ttsBtn').onclick = function () {
+    if (!hasTTS) {
+      report('Voice test', 'not supported');
+      return;
+    }
+    try {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance('Midnight Agency voice check.');
+      if (voices.length) { u.voice = voices[0]; }
+      u.onend = function () {
+        report('Voice test', 'spoke ok');
+        scanVoices();
+      };
+      u.onerror = function (ev) {
+        report('Voice test', 'error: ' + (ev.error || 'unknown'));
+      };
+      window.speechSynthesis.speak(u);
+      setTimeout(scanVoices, 200);
+    } catch (e) {
+      report('Voice test', 'error: ' + e.message);
+    }
+  };
+
+  scanVoices();
+  if (hasTTS && 'onvoiceschanged' in window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = scanVoices;
+  }
+
+  // Email & Copy actions
+  try {
+    var saved = localStorage.getItem(EMAIL_KEY);
+    if (saved && $('emailTo')) { $('emailTo').value = saved; }
+  } catch (e) {}
+
+  $('emailBtn').onclick = function () {
+    var addr = ($('emailTo') && $('emailTo').value || '').trim();
+    try {
+      if (addr) { localStorage.setItem(EMAIL_KEY, addr); }
+    } catch (e) {}
+    var subject = 'Tablet Check Results';
+    var body = $('out').value || '';
+    var href = 'mailto:' + encodeURIComponent(addr)
+      + '?subject=' + encodeURIComponent(subject)
+      + '&body=' + encodeURIComponent(body);
+    $('emailStatus').textContent = 'Opening mail app... (If no mail app opens on the tablet, tap Copy results.)';
+    window.location.href = href;
+  };
+
+  $('copyBtn').onclick = function () {
+    var txt = $('out').value || '';
+    var done = function () { $('emailStatus').textContent = 'Copied results to clipboard.'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(done).catch(function () {
+        $('out').select();
+        document.execCommand('copy');
+        done();
+      });
+    } else {
+      $('out').select();
+      document.execCommand('copy');
+      done();
+    }
+  };
+})();
+</script>
+</body>
+</html>
