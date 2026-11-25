@@ -96,8 +96,7 @@
     lines.push('Screen: ' + window.innerWidth + 'x' + window.innerHeight + ' at ' + window.devicePixelRatio + 'x');
     lines.push('Browser: ' + navigator.userAgent);
     lines.push('Secure page (https): ' + window.isSecureContext);
-    $('out').value = lines.join('
-');
+   $('out').value = lines.join('\n');
   }
 
   // 2. saved data
