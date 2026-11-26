@@ -31,7 +31,7 @@
         { "city": "Lagos", "country": "Nigeria", "region": "Africa", "language": "English / Yoruba" },
         { "city": "Dakar", "country": "Senegal", "region": "Africa", "language": "French / Wolof" },
         { "city": "Mumbai", "country": "India", "region": "Asia", "language": "Marathi / Hindi" },
-        { "city": "Beirut", "country": "Lebanon", "region": "Mediterranean", "language": "Arabic / French" },
+        { "city": "Beirut", "country": "Lebanon", "region": "Asia", "subregion": "Mediterranean", "language": "Arabic / French" },
         { "city": "Buenos Aires", "country": "Argentina", "region": "Americas", "language": "Spanish" },
         { "city": "Santiago", "country": "Chile", "region": "Americas", "language": "Spanish" },
         { "city": "Mexico City", "country": "Mexico", "region": "Americas", "language": "Spanish" },

@@ -5,6 +5,23 @@
   var DEFAULT_THWART_HOURS = 36;
   var DEFAULT_RECOVERY_HOURS = 48;
 
+  /*
+   * Crime lifecycle
+   *   status: open       -> clock running (thwart: stop it / recovery: get it back)
+   *           escalated  -> a thwart window ran out; now a recovery window, clock still running
+   *           cold       -> a window ran out with nobody solving it; clock stopped, trail fading
+   *           resolved   -> closed by the player; crime.resolution.outcome says how
+   *   stageFloor: first heist stage this crime's current window can show. Escalation moves it to
+   *   "escape" (the heist already happened) so a late crime never rewinds to "Planning".
+   */
+  var HEIST_STAGES = [
+    { id: "planning", label: "Planning", share: 0.40, clueClarity: "subtle", summaryHint: "Subtle clues, longest window" },
+    { id: "preparation", label: "Preparation", share: 0.22, clueClarity: "practical", summaryHint: "Gear & local hints forming" },
+    { id: "execution", label: "Execution", share: 0.18, clueClarity: "loud", summaryHint: "Action happening now" },
+    { id: "escape", label: "Escape", share: 0.14, clueClarity: "mobile", summaryHint: "On the move across routes" },
+    { id: "cold", label: "Cold", share: 0.06, clueClarity: "fading", summaryHint: "Trail fading / cooling down" }
+  ];
+
   var DEFAULT_CRIME_TYPES = [
     {
       id: "heist",
@@ -310,36 +327,132 @@
         ? [...NON_SYNDICATE_PROFILES[nonSyndicateKind].twistClues]
         : [],
       status: "open",
+      stageFloor: "planning",
+      resolution: null,
       durationMs: totalDurationMs,
       remainingMs: totalDurationMs
     };
   }
 
+  function stageIndex(id) {
+    for (var i = 0; i < HEIST_STAGES.length; i += 1) {
+      if (HEIST_STAGES[i].id === id) return i;
+    }
+    return 0;
+  }
+
+  // Stage for a crime's current window. Only stages from crime.stageFloor onward are used, with
+  // their shares renormalised, so an escalated crime runs Escape -> Cold instead of restarting.
+  function getHeistStage(crime) {
+    if (!crime) return HEIST_STAGES[0];
+    var cold = HEIST_STAGES[HEIST_STAGES.length - 1];
+
+    if (crime.status === "resolved") {
+      var outcome = crime.resolution && crime.resolution.outcome;
+      return {
+        id: "cold",
+        label: outcome === "escaped" ? "Cold (Got Away)" : "Cold (Case Closed)",
+        clueClarity: "fading",
+        summaryHint: outcome === "escaped" ? "Suspect slipped away" : "Mystery wrapped up"
+      };
+    }
+    if (crime.status === "cold") return cold;
+
+    var total = Number(crime.durationMs) || 0;
+    var rem = Number(crime.remainingMs);
+    var range = HEIST_STAGES.slice(stageIndex(crime.stageFloor));
+    if (total <= 0 || !isFinite(rem)) return range[0];
+    if (rem <= 0) return cold;
+
+    var shareSum = range.reduce(function (sum, s) { return sum + (s.share || 0); }, 0) || 1;
+    var elapsedRatio = Math.min(1, Math.max(0, (total - rem) / total));
+    var cursor = 0;
+    for (var i = 0; i < range.length; i += 1) {
+      cursor += (range[i].share || 0) / shareSum;
+      if (elapsedRatio < cursor || i === range.length - 1) return range[i];
+    }
+    return cold;
+  }
+
+  function escalateCrime(crime, random) {
+    crime.thwartDurationMs = crime.durationMs;
+    crime.status = "escalated";
+    crime.mode = "recovery";
+    crime.stageFloor = "escape";
+    crime.durationMs = DEFAULT_RECOVERY_HOURS * HOUR_MS;
+    crime.remainingMs = DEFAULT_RECOVERY_HOURS * HOUR_MS;
+    crime.summaryAction = "finished the sneaky move before we could stop it";
+    crime.observableClues.push({
+      tag: "escalated",
+      text: pick([
+        "Too late! Whatever was planned already happened.",
+        "Time ran out and they slipped away with the goods."
+      ], random)
+    });
+  }
+
+  function coolCrime(crime, random) {
+    crime.status = "cold";
+    crime.remainingMs = 0;
+    crime.observableClues.push({
+      tag: "cold",
+      text: pick([
+        "The trail has gone cold. Nobody has seen anything new in a long while.",
+        "Footprints faded and the lights went out. The trail is quiet now."
+      ], random)
+    });
+  }
+
   function advanceCrime(crime, elapsedMs, rng) {
     var random = typeof rng === "function" ? rng : Math.random;
     var dt = typeof elapsedMs === "number" ? Math.max(0, elapsedMs) : HOUR_MS;
-    if (!crime || crime.status !== "open" || !dt) return crime;
+    if (!crime || !dt) return crime;
+    // Only open and escalated crimes tick. Cold and resolved ones are finished.
+    if (crime.status !== "open" && crime.status !== "escalated") return crime;
+    if (!isFinite(Number(crime.remainingMs))) return crime;
+    if (!Array.isArray(crime.observableClues)) crime.observableClues = [];
 
-    if (typeof crime.remainingMs === "number") {
-      crime.remainingMs = Math.max(0, crime.remainingMs - dt);
-    }
-
-    if (crime.mode === "thwart" && crime.remainingMs <= 0) {
-      crime.status = "escalated";
-      crime.mode = "recovery";
-      crime.durationMs = DEFAULT_RECOVERY_HOURS * HOUR_MS;
-      crime.remainingMs = DEFAULT_RECOVERY_HOURS * HOUR_MS;
-      crime.summaryAction = "finished the sneaky move before we could stop it";
-      crime.observableClues.push({
-        tag: "escalated",
-        text: pick([
-          "Too late! Whatever was planned already happened.",
-          "Time ran out and they slipped away with the goods."
-        ], random)
-      });
+    // Spend the elapsed time window by window, so a big step carries its leftover time through
+    // thwart -> escalated -> cold instead of losing it at the boundary.
+    var budget = dt;
+    for (var guard = 0; guard < 4 && budget >= 0; guard += 1) {
+      var rem = Number(crime.remainingMs);
+      if (budget < rem) {
+        crime.remainingMs = rem - budget;
+        break;
+      }
+      budget -= rem;
+      crime.remainingMs = 0;
+      if (crime.status === "open" && crime.mode === "thwart") {
+        escalateCrime(crime, random);
+      } else {
+        coolCrime(crime, random);
+        break;
+      }
     }
 
     return crime;
+  }
+
+  // Close a crime. outcome: "caught" | "escaped" | "closed". Safe to call twice.
+  function resolveCrime(crime, outcome) {
+    if (!crime || crime.status === "resolved") return crime;
+    crime.resolution = { outcome: outcome || "closed", fromStatus: crime.status };
+    crime.status = "resolved";
+    return crime;
+  }
+
+  // Resolve every unresolved crime linked to a suspect. Returns the crimes that were closed.
+  function resolveCrimesForSuspect(crimes, suspectId, outcome) {
+    if (!Array.isArray(crimes) || !suspectId) return [];
+    var closed = [];
+    crimes.forEach(function (c) {
+      if (c && c.suspectId === suspectId && c.status !== "resolved") {
+        resolveCrime(c, outcome);
+        closed.push(c);
+      }
+    });
+    return closed;
   }
 
   function advanceAllCrimes(crimes, elapsedMs, rng) {
@@ -351,6 +464,10 @@
 
   global.CrimeEngine = {
     HOUR_MS: HOUR_MS,
+    HEIST_STAGES: HEIST_STAGES,
+    getHeistStage: getHeistStage,
+    resolveCrime: resolveCrime,
+    resolveCrimesForSuspect: resolveCrimesForSuspect,
     DEFAULT_CRIME_TYPES: DEFAULT_CRIME_TYPES,
     TACTIC_CLUES: TACTIC_CLUES,
     CONFLICTING_TAGS: CONFLICTING_TAGS,

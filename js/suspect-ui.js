@@ -1,42 +1,10 @@
 (function () {
   var HOUR_MS = 60 * 60 * 1000;
 
-  var HEIST_STAGES = [
-    {
-      id: "planning",
-      label: "Planning",
-      share: 0.40,
-      clueClarity: "subtle",
-      summaryHint: "Subtle clues, longest window"
-    },
-    {
-      id: "preparation",
-      label: "Preparation",
-      share: 0.22,
-      clueClarity: "practical",
-      summaryHint: "Gear & local hints forming"
-    },
-    {
-      id: "execution",
-      label: "Execution",
-      share: 0.18,
-      clueClarity: "loud",
-      summaryHint: "Action happening now"
-    },
-    {
-      id: "escape",
-      label: "Escape",
-      share: 0.14,
-      clueClarity: "mobile",
-      summaryHint: "On the move across routes"
-    },
-    {
-      id: "cold",
-      label: "Cold",
-      share: 0.06,
-      clueClarity: "fading",
-      summaryHint: "Trail fading / cooling down"
-    }
+  // Stage table and stage maths live in js/crime-generator.js (CrimeEngine). This is only a
+  // fallback so the page never throws if that script failed to load.
+  var HEIST_STAGES = (window.CrimeEngine && window.CrimeEngine.HEIST_STAGES) || [
+    { id: "planning", label: "Planning", share: 1, clueClarity: "subtle", summaryHint: "Subtle clues, longest window" }
   ];
 
   var logs = [];
@@ -99,34 +67,10 @@
   }
 
   function getHeistStage(crime) {
-    if (!crime) return HEIST_STAGES[0];
-    if (crime.status === "resolved") {
-      return {
-        id: "cold",
-        label: "Cold (Case Closed)",
-        clueClarity: "fading",
-        summaryHint: "Mystery wrapped up"
-      };
+    if (window.CrimeEngine && typeof window.CrimeEngine.getHeistStage === "function") {
+      return window.CrimeEngine.getHeistStage(crime);
     }
-
-    var total = Number(crime.durationMs) || 0;
-    var rem = Number(crime.remainingMs);
-    if (total <= 0 || !Number.isFinite(rem)) {
-      return HEIST_STAGES[0];
-    }
-    if (rem <= 0) {
-      return HEIST_STAGES[HEIST_STAGES.length - 1];
-    }
-
-    var elapsedRatio = Math.min(1, Math.max(0, (total - rem) / total));
-    var cursor = 0;
-    for (var i = 0; i < HEIST_STAGES.length; i++) {
-      cursor += HEIST_STAGES[i].share || 0;
-      if (elapsedRatio < cursor || i === HEIST_STAGES.length - 1) {
-        return HEIST_STAGES[i];
-      }
-    }
-    return HEIST_STAGES[HEIST_STAGES.length - 1];
+    return HEIST_STAGES[0];
   }
 
   function formatClueForStage(clue, stageObj) {
@@ -207,6 +151,18 @@
     return all.find(function (s) { return s.id === id; }) || null;
   }
 
+  // A suspect who is caught or slips away closes every crime linked to them.
+  function closeLinkedCrimes(suspect, outcome) {
+    if (!suspect || !window.CrimeEngine) return;
+    var closed = window.CrimeEngine.resolveCrimesForSuspect(activeCrimes, suspect.id, outcome);
+    closed.forEach(function (c) {
+      logEvent(
+        (outcome === "caught" ? "Case solved: " : "Case closed, suspect got away: ") +
+        c.typeLabel + " at " + c.target.name + "."
+      );
+    });
+  }
+
   function spawnIncident(customOpts) {
     if (!window.CrimeEngine || !rosterData) return null;
     var snap = engine ? engine.getSnapshot() : { caseNumber: 1 };
@@ -279,6 +235,11 @@
             "TOO LATE! " + c.typeLabel + " at " + c.target.name +
             " (" + c.target.city + ") switched from THWART to RECOVERY!"
           );
+        } else if (prev && prev.status !== "cold" && c.status === "cold") {
+          logEvent(
+            "COLD: the trail on " + c.typeLabel + " at " + c.target.name +
+            " (" + c.target.city + ") has gone cold."
+          );
         } else if (prev && nextStage && prev.stageId !== nextStage.id && c.status !== "resolved") {
           logEvent(
             "Stage shift: " + c.typeLabel + " at " + c.target.name +
@@ -323,7 +284,7 @@
 
       if (document.hidden) return;
       if (!engine || !activeCrimes.length) return;
-      var hasOpen = activeCrimes.some(function (c) { return c.status !== "resolved"; });
+      var hasOpen = activeCrimes.some(function (c) { return c.status === "open" || c.status === "escalated"; });
       if (!hasOpen) return;
       stepClock("tick", elapsed);
     }, clockIntervalMs);
@@ -374,7 +335,9 @@
       var stagePrefix = stageObj ? stageObj.label + " · " : "";
       var modeBadge =
         c.status === "resolved"
-          ? "solved"
+          ? (c.resolution && c.resolution.outcome === "escaped" ? "got away" : "solved")
+          : c.status === "cold"
+          ? "cold trail"
           : c.mode === "thwart"
           ? stagePrefix + "stop it · " + remainingLabel + " left" + etaLabel
           : c.status === "escalated"
@@ -599,10 +562,14 @@
           var res = engine.handleEscape(id);
           if (res) {
             logEvent(res.suspect.displayName + ": " + res.note + " (+" + res.addedUnderlingsCount + " Tier 1 staged)");
+            closeLinkedCrimes(res.suspect, "escaped");
           }
         } else if (action === "capture") {
           var cap = engine.captureSuspect(id);
-          if (cap) logEvent("Caught " + cap.displayName + " (Tier " + cap.tier + ").");
+          if (cap) {
+            logEvent("Caught " + cap.displayName + " (Tier " + cap.tier + ").");
+            closeLinkedCrimes(cap, "caught");
+          }
         } else if (action === "spawn-crime") {
           spawnIncident();
         } else if (action === "spawn-lookalike") {
@@ -618,7 +585,8 @@
         } else if (action === "resolve-crime") {
           var targetCrime = activeCrimes.find(function (c) { return c.id === id; });
           if (targetCrime) {
-            targetCrime.status = "resolved";
+            if (window.CrimeEngine) window.CrimeEngine.resolveCrime(targetCrime, "closed");
+            else targetCrime.status = "resolved";
             logEvent("Case closed: " + targetCrime.typeLabel + " at " + targetCrime.target.name + ".");
           }
         }

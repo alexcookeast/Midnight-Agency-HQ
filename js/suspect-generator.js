@@ -93,7 +93,11 @@ function resolveStartingPlace(options = {}, rng = Math.random) {
   const wf = typeof window !== "undefined" ? window.WorldFactbook : null;
   if (wf && typeof wf.findPlace === "function") {
     const explicit = wf.findPlace(
-      options.currentPlaceId || options.placeId || options.currentCity || options.city
+      options.currentPlaceId ||
+        options.placeId ||
+        options.currentCity ||
+        options.city ||
+        (options.origin && (options.origin.placeId || options.origin.city))
     );
     if (explicit) return explicit;
 
@@ -244,6 +248,46 @@ function pickUniqueNickname(pool, usedNicknames = new Set(), rng = Math.random) 
   return pickRandom(available, rng);
 }
 
+const DEFAULT_TRAITS = [
+  "Carries a folded train map in a coat pocket",
+  "Always checks the clock before sneaking off"
+];
+
+const DEFAULT_CALL_STYLE = {
+  habit: "Makes quick calls from payphones or lobby phones",
+  clueTemplates: [
+    "A quick phone call came from a {callingCode} line near {capitalName}."
+  ]
+};
+
+// Pools in suspects.json split first names into female / male / neutral lists.
+// Legacy single `firstNames` lists are still honoured if present.
+function pickFirstName(pool, rng = Math.random) {
+  const lists = [pool?.femaleFirstNames, pool?.maleFirstNames, pool?.neutralFirstNames]
+    .filter((l) => Array.isArray(l) && l.length);
+  if (!lists.length) {
+    return pickRandom(pool?.firstNames, rng) || null;
+  }
+  // Pick a list first (so a long list doesn't swamp a short one), then a name.
+  const list = pickRandom(lists, rng);
+  return pickRandom(list, rng) || null;
+}
+
+// Prefer ethnicity pools the ring actually recruits from (recruitingRoots).
+function pickEthnicityKey(pools, ring, requested, rng = Math.random) {
+  if (requested && pools[requested]) return requested;
+  const roots = Array.isArray(ring?.recruitingRoots)
+    ? ring.recruitingRoots.filter((k) => pools[k])
+    : [];
+  if (roots.length) return pickRandom(roots, rng);
+  return pickRandom(Object.keys(pools), rng);
+}
+
+function pickRingHub(ring, rng = Math.random) {
+  const hubs = Array.isArray(ring?.homeHubs) ? ring.homeHubs : [];
+  return pickRandom(hubs, rng) || null;
+}
+
 function createFreshSuspect(rosterData, options = {}) {
   const rng = options.rng || Math.random;
   const rules = { ...GENERATION_RULES, ...(options.rules || {}) };
@@ -251,11 +295,16 @@ function createFreshSuspect(rosterData, options = {}) {
   const tier = Math.min(Math.max(Number(options.tier) || 1, 1), rules.ringleaderTier);
 
   const pools = rosterData.namePoolsByEthnicity || {};
-  const ethnicityKeys = Object.keys(pools);
-  const ethnicityKey =
-    options.ethnicity && pools[options.ethnicity]
-      ? options.ethnicity
-      : pickRandom(ethnicityKeys, rng);
+
+  // Ring first, so its recruitingRoots can steer the ethnicity pool.
+  const rings = Object.keys(rosterData.crimeRings || {});
+  const ringId =
+    options.ringId && rosterData.crimeRings?.[options.ringId]
+      ? options.ringId
+      : pickRandom(rings.length ? rings : ["night-shift"], rng);
+  const ring = rosterData.crimeRings?.[ringId] || null;
+
+  const ethnicityKey = pickEthnicityKey(pools, ring, options.ethnicity, rng);
 
   const namePool = pools[ethnicityKey] || {
     firstNames: ["Alex", "Sam", "Jordan", "Morgan"],
@@ -263,7 +312,7 @@ function createFreshSuspect(rosterData, options = {}) {
     nickNames: ["Shadow", "Cipher", "Fox"]
   };
 
-  const firstName = pickRandom(namePool.firstNames, rng) || "Alex";
+  const firstName = pickFirstName(namePool, rng) || "Alex";
   const lastNameCandidates = (namePool.lastNames || []).filter((n) => n !== firstName);
   const { lastName, surnameParts, isHyphenated } = buildLastName(
     { ...namePool, lastNames: lastNameCandidates.length ? lastNameCandidates : namePool.lastNames },
@@ -302,15 +351,16 @@ function createFreshSuspect(rosterData, options = {}) {
     rng
   );
 
-  const rings = Object.keys(rosterData.crimeRings || {});
-  const ringId =
-    options.ringId && rosterData.crimeRings?.[options.ringId]
-      ? options.ringId
-      : pickRandom(rings.length ? rings : ["night-shift"], rng);
-
   const isOutlier = options.isOutlier ?? (rng() < 0.08);
   const favoriteRegions = options.favoriteRegions || ["Europe", "Americas", "Asia", "Africa", "Oceania"];
-  const startPlace = resolveStartingPlace({ ...options, favoriteRegions }, rng);
+  const originHub = options.origin || pickRingHub(ring, rng);
+  const startPlace = resolveStartingPlace(
+    { ...options, origin: originHub, favoriteRegions },
+    rng
+  );
+  const origin = originHub
+    ? { ...originHub, placeId: startPlace.id }
+    : { city: startPlace.city, country: startPlace.country, region: startPlace.region, placeId: startPlace.id };
 
   const id = `${firstName}-${lastName}-${Date.now().toString(36)}-${randomInt(10, 99, rng)}`
     .toLowerCase()
@@ -328,6 +378,7 @@ function createFreshSuspect(rosterData, options = {}) {
     nameDisplayMode,
     displayName,
     ringId,
+    origin,
     tier,
     rankTitle: TIER_TITLES[tier] || "Operative",
     superiorId: options.superiorId || null,
@@ -355,16 +406,8 @@ function createFreshSuspect(rosterData, options = {}) {
       outfit,
       accoutrements
     },
-    traits: [
-      "Carries a folded train map in a coat pocket",
-      "Always checks the clock before sneaking off"
-    ],
-    callStyle: {
-      habit: "Makes quick calls from payphones or lobby phones",
-      clueTemplates: [
-        "A quick phone call came from a {callingCode} line near {capitalName}."
-      ]
-    },
+    traits: DEFAULT_TRAITS.slice(),
+    callStyle: cloneObj(DEFAULT_CALL_STYLE),
     favoriteRegions,
     history: {
       casesAppeared: 0,
@@ -440,6 +483,16 @@ class SuspectEngine {
       accoutrements: buildAccoutrements(stylePools.accoutrements || DEFAULT_STYLE_POOLS.accoutrements, 1)
     };
     s.history = s.history || { casesAppeared: 0, lastSeenIso2: null, notes: [] };
+    // Recurring records carry origin / traits / callStyle; keep them, and fill gaps for anyone else.
+    s.origin = s.origin || {
+      city: place.city,
+      country: place.country,
+      region: place.region,
+      placeId: place.id
+    };
+    if (s.origin && !s.origin.placeId) s.origin.placeId = place.id;
+    s.traits = Array.isArray(s.traits) && s.traits.length ? s.traits : DEFAULT_TRAITS.slice();
+    s.callStyle = s.callStyle || cloneObj(DEFAULT_CALL_STYLE);
     return s;
   }
 

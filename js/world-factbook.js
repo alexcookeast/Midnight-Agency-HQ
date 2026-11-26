@@ -3,11 +3,16 @@
 
   var HOUR_MS = 60 * 60 * 1000;
 
+  // Numeric rank levels come from js/ma-config.js (single source of truth).
+  // Fallback matches it so standalone test pages that skip that script keep working.
+  var RL = (global.MidnightAgencyConfig && global.MidnightAgencyConfig.RANK_LEVELS) ||
+    { ROOKIE: 1, OPERATIVE: 2, FIELD_AGENT: 3 };
+
   var TRAVEL_MODES = {
     transit: {
       id: "transit",
       label: "Local Bus / Ferry",
-      minRank: 1,
+      minRank: RL.ROOKIE,
       speedKmh: 45,
       costPerHour: 15,
       requiresHub: false,
@@ -16,16 +21,25 @@
     road: {
       id: "road",
       label: "Car / Road Trip",
-      minRank: 1,
+      minRank: RL.ROOKIE,
       speedKmh: 75,
       costPerHour: 25,
       requiresHub: false,
       summary: "Flexible on connected land and great for reaching stations or hubs—never crosses oceans."
     },
+    ferry: {
+      id: "ferry",
+      label: "Ferry",
+      minRank: RL.ROOKIE,
+      speedKmh: 35,
+      costPerHour: 20,
+      requiresHub: false,
+      summary: "Harbor and strait ferries between port cities. Slow and scenic."
+    },
     rail: {
       id: "rail",
       label: "Passenger Train",
-      minRank: 1,
+      minRank: RL.ROOKIE,
       speedKmh: 115,
       costPerHour: 30,
       requiresHub: false,
@@ -34,7 +48,7 @@
     flight: {
       id: "flight",
       label: "Commercial Flight",
-      minRank: 2,
+      minRank: RL.OPERATIVE,
       speedKmh: 640,
       costPerHour: 95,
       requiresHub: true,
@@ -43,7 +57,7 @@
     charter: {
       id: "charter",
       label: "Charter / Covert Hop",
-      minRank: 3,
+      minRank: RL.FIELD_AGENT,
       speedKmh: 500,
       costPerHour: 175,
       requiresHub: false,
@@ -231,18 +245,116 @@
       modes: ["transit", "road", "rail", "ferry", "flight", "charter"],
       map: { x: 83, y: 40 },
       note: "Japanese bay city famous for fast trains, canals, and busy hubs—separated by sea from the mainland."
+    },
+    {
+      id: "tokyo",
+      city: "Tokyo",
+      country: "Japan",
+      iso2: "JP",
+      region: "Asia",
+      landmass: "japan",
+      isHub: true,
+      modes: ["transit", "road", "rail", "ferry", "flight", "charter"],
+      map: { x: 85, y: 39 },
+      note: "Giant bay city where sleek trains, neon signs and tiny quiet shrines all share the same blocks."
+    },
+    {
+      id: "mumbai",
+      city: "Mumbai",
+      country: "India",
+      iso2: "IN",
+      region: "Asia",
+      landmass: "south-asia",
+      isHub: true,
+      modes: ["transit", "road", "rail", "ferry", "flight", "charter"],
+      map: { x: 68, y: 47 },
+      note: "Busy Arabian Sea port with commuter trains, harbor ferries and markets that never really close."
+    },
+    {
+      id: "beirut",
+      city: "Beirut",
+      country: "Lebanon",
+      iso2: "LB",
+      region: "Asia",
+      subregion: "Mediterranean",
+      landmass: "middle-east",
+      isHub: true,
+      modes: ["transit", "road", "ferry", "flight", "charter"],
+      map: { x: 59, y: 40 },
+      note: "Mediterranean harbor city backed by mountains, with old seaside promenades and late-night cafes."
+    },
+    {
+      id: "buenos-aires",
+      city: "Buenos Aires",
+      country: "Argentina",
+      iso2: "AR",
+      region: "Americas",
+      landmass: "south-america",
+      isHub: true,
+      modes: ["transit", "road", "rail", "ferry", "flight", "charter"],
+      map: { x: 32, y: 75 },
+      note: "Wide-avenue port city on a huge muddy river, famous for tango, trains and big bookshops."
+    },
+    {
+      id: "duluth",
+      city: "Duluth",
+      country: "United States",
+      iso2: "US",
+      region: "Americas",
+      landmass: "north-america",
+      isHub: false,
+      modes: ["transit", "road", "rail", "charter"],
+      map: { x: 22, y: 33 },
+      note: "Hilly lake-harbor town on Lake Superior where giant ore ships slide under a lift bridge."
+    },
+    {
+      id: "anchorage",
+      city: "Anchorage",
+      country: "United States",
+      iso2: "US",
+      region: "Americas",
+      landmass: "north-america",
+      isHub: true,
+      modes: ["transit", "road", "flight", "charter"],
+      map: { x: 12, y: 21 },
+      note: "Far-north city ringed by snowy peaks, where bush planes are as common as pickup trucks."
     }
   ];
 
+  function stripDiacritics(str) {
+    var s = String(str);
+    return s.normalize ? s.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : s;
+  }
+
+  // Canonical place id: lowercase ascii kebab-case city slug ("Buenos Aires" -> "buenos-aires").
+  function slugifyPlace(str) {
+    return stripDiacritics(str).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  }
+
   function findPlace(query) {
     if (!query) return null;
-    if (typeof query === "object" && query.city) {
-      query = query.city;
+    if (typeof query === "object") {
+      query = query.placeId || query.id || query.city;
+      if (!query) return null;
     }
     var q = String(query).trim().toLowerCase();
+    var slug = slugifyPlace(q);
     return PLACES.find(function (p) {
-      return p.id.toLowerCase() === q || p.city.toLowerCase() === q;
+      return p.id === q || p.id === slug || p.city.toLowerCase() === q || slugifyPlace(p.city) === slug;
     }) || null;
+  }
+
+  // Country-level join (data/countries/<iso2 lowercase>.json, factbook-index.json, dashboard `code`).
+  function placesByIso2(iso2) {
+    var code = String(iso2 || "").toUpperCase();
+    return PLACES.filter(function (p) { return p.iso2 === code; });
+  }
+
+  function countryFileUrl(placeOrIso2) {
+    var code = typeof placeOrIso2 === "object" && placeOrIso2
+      ? placeOrIso2.iso2
+      : placeOrIso2;
+    return code ? "data/countries/" + String(code).toLowerCase() + ".json" : null;
   }
 
   function pickPlace(opts, rng) {
@@ -314,7 +426,12 @@
 
   function planRoute(fromQuery, toQuery, options) {
     var opts = options || {};
-    var rank = Number(opts.rank) || 1;
+    // opts.rank may be a numeric level (1-3) or a rank name ("Operative"); names go through the
+    // shared helper so a string can never silently fall back to Rookie.
+    var MAC = global.MidnightAgencyConfig;
+    var rank = typeof opts.rank === "string" && MAC && MAC.rankLevel
+      ? MAC.rankLevel(opts.rank)
+      : (Number(opts.rank) || RL.ROOKIE);
     var fromPlace = findPlace(fromQuery);
     var toPlace = findPlace(toQuery);
 
@@ -434,6 +551,9 @@
     TRAVEL_MODES: TRAVEL_MODES,
     PLACES: PLACES,
     findPlace: findPlace,
+    slugifyPlace: slugifyPlace,
+    placesByIso2: placesByIso2,
+    countryFileUrl: countryFileUrl,
     pickPlace: pickPlace,
     formatDurationMs: formatDurationMs,
     planRoute: planRoute

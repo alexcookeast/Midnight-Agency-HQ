@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Midnight Agency — GM Suite</title>
+<script src="../js/ma-config.js"></script>
 <style>
   :root {
     --bg: #0f141f;
@@ -149,52 +150,16 @@
 <script>
 (function () {
   'use strict';
-  var STORAGE_KEY = 'midnight_agency_config_v1';
-  var EVENT_NAME = 'ma:config-updated';
+  var MA = window.MidnightAgencyConfig;
+  var STORAGE_KEY = MA.STORAGE_KEY;
+  var EVENT_NAME = MA.EVENT_NAME;
   var unlocked = false;
 
   function $(id) { return document.getElementById(id); }
 
-  function defaultConfig() {
-    return {
-      gm: { userName: 'GM', passCode: 'MIDNIGHT-GM', clearanceKey: 'MIDNIGHT-GM' },
-      player: { rank: 'Rookie', userName: '', passCode: '', stars: 0 },
-      passcodeToppings: ['pickles', 'olives', 'mushrooms'],
-      secretPhrase: 'pickles, olives, and mushrooms',
-      dashboardUrl: './midnight-agency-passcode.html',
-      christmasEnabled: true,
-      snowDensity: 45,
-      snowSpeed: 1.0
-    };
-  }
-
-  function readConfig() {
-    var base = defaultConfig();
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return base;
-      var parsed = JSON.parse(raw);
-      return Object.assign({}, base, parsed, {
-        gm: Object.assign({}, base.gm, parsed && parsed.gm),
-        player: Object.assign({}, base.player, parsed && parsed.player)
-      });
-    } catch (e) {
-      return base;
-    }
-  }
-
-  function writeConfig(patch) {
-    var cur = readConfig();
-    var next = Object.assign({}, cur, patch || {}, {
-      gm: Object.assign({}, cur.gm, patch && patch.gm),
-      player: Object.assign({}, cur.player, patch && patch.player)
-    });
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: next }));
-    } catch (e) {}
-    return next;
-  }
+  // Config + rank rules live in ../js/ma-config.js (single source of truth).
+  var readConfig = MA.read;
+  var writeConfig = MA.write;
 
   function setStatus(msg) {
     $('gmStatus').innerHTML = msg;
@@ -279,9 +244,9 @@
       return;
     }
     var u = rank === 'Rookie' ? '' : ($('playerUserName').value || '').trim();
-    var stars = rank === 'Rookie'
-      ? 0
-      : Math.max(Number((cur.player && cur.player.stars) || 0), rank === 'Field Agent' ? 5 : 2);
+    // Keep current stars if they already map to the chosen rank; otherwise snap to that rank's
+    // threshold (so the GM can demote too). Thresholds come from the shared module.
+    var stars = MA.starsForGmRank(rank, cur.player && cur.player.stars);
     writeConfig({ player: { rank: rank, userName: u, passCode: rawCode, stars: stars } });
     setStatus('Saved player rules for rank <strong>' + rank + '</strong>.');
   };

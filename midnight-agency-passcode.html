@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Midnight Agency — Passcode Gate</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<script src="./js/ma-config.js"></script>
 <script src="./js/holiday-overlay.js" defer></script>
 <style>
 *{box-sizing:border-box}
@@ -100,65 +101,18 @@ h1,h2,h3,.ftitle{font-family:'Fredoka',system-ui,sans-serif}
 <script>
 (function () {
   'use strict';
-  var STORAGE_KEY = 'midnight_agency_config_v1';
-  var DASHBOARD_URL = './player-dashboard.html';
+  var MA = window.MidnightAgencyConfig;
+  var STORAGE_KEY = MA.STORAGE_KEY;
+  var DASHBOARD_URL = MA.DASHBOARD_URL;
   var code = '';
 
   function $(id) { return document.getElementById(id); }
 
-  function defaultConfig() {
-    return {
-      gm: { userName: 'GM', passCode: 'MIDNIGHT-GM', clearanceKey: 'MIDNIGHT-GM' },
-      player: { rank: 'Rookie', userName: '', passCode: '', stars: 0 },
-      passcodeToppings: ['pickles', 'olives', 'mushrooms'],
-      secretPhrase: 'pickles, olives, and mushrooms',
-      dashboardUrl: './midnight-agency-passcode.html',
-      christmasEnabled: true,
-      snowDensity: 45,
-      snowSpeed: 1.0
-    };
-  }
-
-  function readConfig() {
-    var base = defaultConfig();
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return base;
-      var parsed = JSON.parse(raw);
-      return Object.assign({}, base, parsed, {
-        gm: Object.assign({}, base.gm, parsed && parsed.gm),
-        player: Object.assign({}, base.player, parsed && parsed.player)
-      });
-    } catch (e) {
-      return base;
-    }
-  }
-
-  function writeConfig(patch) {
-    var cur = readConfig();
-    var next = Object.assign({}, cur, patch || {}, {
-      gm: Object.assign({}, cur.gm, patch && patch.gm),
-      player: Object.assign({}, cur.player, patch && patch.player)
-    });
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch (e) {}
-    if (window.MidnightAgencyOverlay && typeof window.MidnightAgencyOverlay.apply === 'function') {
-      window.MidnightAgencyOverlay.apply(next);
-    }
-    return next;
-  }
-
-  function effectiveRank(cfg) {
-    var stars = Number((cfg.player && cfg.player.stars) || 0);
-    if (stars >= 5) return 'Field Agent';
-    if (stars >= 2) return 'Operative';
-    return (cfg.player && cfg.player.rank) || 'Rookie';
-  }
-
-  function isPromoted(cfg) {
-    return effectiveRank(cfg) !== 'Rookie';
-  }
+  // Config + rank rules live in js/ma-config.js (single source of truth).
+  var readConfig = MA.read;
+  var writeConfig = MA.write;
+  var effectiveRank = MA.effectiveRank;
+  var isPromoted = MA.isPromoted;
 
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('on'); });
@@ -262,9 +216,8 @@ h1,h2,h3,.ftitle{font-family:'Fredoka',system-ui,sans-serif}
     var savedCode = String((cfg.player && cfg.player.passCode) || '').trim();
 
     if (savedCode.length !== 4) {
-      writeConfig({
-        player: { passCode: code, rank: 'Rookie', userName: '' }
-      });
+      writeConfig({ player: { passCode: code } });
+      MA.markGatePassed();
       code = '';
       drawDots();
       $('lMsg').textContent = '';
@@ -274,6 +227,7 @@ h1,h2,h3,.ftitle{font-family:'Fredoka',system-ui,sans-serif}
     }
 
     if (code === savedCode) {
+      MA.markGatePassed();
       code = '';
       drawDots();
       $('lMsg').textContent = '';
@@ -297,12 +251,13 @@ h1,h2,h3,.ftitle{font-family:'Fredoka',system-ui,sans-serif}
       $('codenameMsg').textContent = 'Enter a codename first.';
       return;
     }
-    writeConfig({ player: { userName: name, rank: effectiveRank(cfg) } });
+    writeConfig({ player: { userName: name } });
     $('codenameMsg').textContent = 'Codename saved: ' + name;
     refreshGateUI();
   };
 
   $('enterDashboardBtn').onclick = function () {
+    MA.markGatePassed();
     window.location.href = DASHBOARD_URL;
   };
 
@@ -316,6 +271,7 @@ h1,h2,h3,.ftitle{font-family:'Fredoka',system-ui,sans-serif}
   window.addEventListener('storage', function (e) {
     if (e.key === STORAGE_KEY) refreshGateUI();
   });
+  window.addEventListener(MA.EVENT_NAME, refreshGateUI);
 
   buildKeypad();
   refreshGateUI();

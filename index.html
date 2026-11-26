@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Uncle Alex's Pizza Parlour</title>
+<script src="./js/ma-config.js"></script>
 <script src="./js/holiday-overlay.js" defer></script>
 <style>
   * { box-sizing: border-box; }
@@ -353,28 +354,9 @@
   function rnd(n){ return Math.floor(Math.random()*n); }
   function money(c){ return '$'+(c/100).toFixed(2); }
 
+  // Config lives in js/ma-config.js (single source of truth).
   function readSharedConfig() {
-    var fallback = {
-      passcodeToppings: ['pickles', 'olives', 'mushrooms'],
-      secretPhrase: 'pickles, olives, and mushrooms',
-      dashboardUrl: PASSCODE_URL,
-      player: { rank: 'Rookie', userName: '', passCode: '', stars: 0 },
-      npcs: {},
-      christmasEnabled: true,
-      snowDensity: 45,
-      snowSpeed: 1.0
-    };
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return fallback;
-      var parsed = JSON.parse(raw);
-      return Object.assign({}, fallback, parsed, {
-        player: Object.assign({}, fallback.player, parsed && parsed.player),
-        npcs: Object.assign({}, fallback.npcs, parsed && parsed.npcs)
-      });
-    } catch (e) {
-      return fallback;
-    }
+    return window.MidnightAgencyConfig.read();
   }
 
   function teardownHolidayCover() {
@@ -392,8 +374,7 @@
   function goToPasscodeGate() {
     teardownHolidayCover();
     var cfg = readSharedConfig();
-    var target = cfg.dashboardUrl || PASSCODE_URL;
-    if (target === './player-dashboard.html') target = PASSCODE_URL;
+    var target = cfg.gateUrl || PASSCODE_URL;
     window.location.href = target;
   }
 

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Midnight Agency — Player HQ Dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<script src="./js/ma-config.js"></script>
 <script src="./js/holiday-overlay.js" defer></script>
 <style>
   * { box-sizing: border-box; }
@@ -217,67 +218,18 @@
 
 <script>
 (function () {
-  var STORAGE_KEY = 'midnight_agency_config_v1';
+  var MA = window.MidnightAgencyConfig;
+  // Lightweight gate check: send visitors through the passcode gate first.
+  // Testing bypass: open player-dashboard.html?dev=1
+  if (!MA.requireGate()) return;
+  var STORAGE_KEY = MA.STORAGE_KEY;
   function $(id){return document.getElementById(id);}
   function rnd(n){return Math.floor(Math.random()*n);}
   function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=rnd(i+1), t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
 
-  function readSharedConfig() {
-    var fallback = {
-      passcodeToppings: ['pickles', 'olives', 'mushrooms'],
-      secretPhrase: 'pickles, olives, and mushrooms',
-      dashboardUrl: './midnight-agency-passcode.html',
-      player: { rank: 'Rookie', userName: '', passCode: '' },
-      christmasEnabled: true,
-      snowDensity: 45,
-      snowSpeed: 1.0
-    };
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return fallback;
-      var parsed = JSON.parse(raw);
-      var merged = Object.assign({}, fallback, parsed, {
-        player: Object.assign({}, fallback.player, parsed && parsed.player)
-      });
-      if (!merged.dashboardUrl || merged.dashboardUrl === './player-dashboard.html') {
-        merged.dashboardUrl = './midnight-agency-passcode.html';
-      }
-      if (typeof merged.snowDensity !== 'number' || isNaN(merged.snowDensity)) {
-        var map = { off: 0, light: 20, medium: 45, heavy: 85 };
-        merged.snowDensity = map.hasOwnProperty(parsed && parsed.snowLevel) ? map[parsed.snowLevel] : fallback.snowDensity;
-      }
-      if (typeof merged.snowSpeed !== 'number' || isNaN(merged.snowSpeed)) {
-        merged.snowSpeed = fallback.snowSpeed;
-      }
-      merged.snowDensity = Math.max(0, Math.min(100, Number(merged.snowDensity)));
-      merged.snowSpeed = Math.max(0.2, Math.min(4.0, Number(merged.snowSpeed)));
-      return merged;
-    } catch (e) {
-      return fallback;
-    }
-  }
-
-  function writeSharedConfig(patch) {
-    var next = Object.assign({}, readSharedConfig(), patch || {}, {
-      player: Object.assign({}, readSharedConfig().player, patch && patch.player)
-    });
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch (e) {}
-    applySeasonalSettings(next);
-    return next;
-  }
-
-  function writePlayerPatch(patch) {
-    var cur = readSharedConfig();
-    var next = Object.assign({}, cur, {
-      player: Object.assign({}, cur.player, patch || {})
-    });
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch (e) {}
-    return next;
-  }
+  // Config + rank rules live in js/ma-config.js (single source of truth).
+  // Every read hits localStorage, so GM edits made in another tab are always seen.
+  var readSharedConfig = MA.read;
 
   var PH = {
     Italian:{hello:'Ciao',bye:'Arrivederci',thanks:'Grazie',yes:'Si',no:'No',please:'Per favore'},
@@ -426,18 +378,16 @@
   var mapView={x:0,y:0,w:720,h:360}, mapSel=null;
   var HQLL={lat:45.27,lon:-66.06};
   var HQC={code:'HQ',name:'Saint John',cap:'HQ',lat:HQLL.lat,lon:HQLL.lon,tz:'America/Halifax'};
-  var stars=0, patrol=0, tickPaused=false, ti=0, tickItems=[];
+  var patrol=0, tickPaused=false, ti=0, tickItems=[];
 
-  function computeRank() {
-    var cfg = readSharedConfig();
-    if (stars >= 5) return 'Field Agent';
-    if (stars >= 2) return 'Operative';
-    return (cfg.player && cfg.player.rank) || 'Rookie';
+  function currentStars() {
+    return Number(readSharedConfig().player.stars) || 0;
   }
 
   function syncPlayerHeader() {
     var cfg = readSharedConfig();
-    var rank = computeRank();
+    var stars = currentStars();
+    var rank = MA.effectiveRank(cfg);
     var promoted = rank !== 'Rookie';
     var codename = promoted ? String((cfg.player && cfg.player.userName) || '').trim() : '';
 
@@ -592,9 +542,9 @@
   };
 
   function recordStar() {
-    stars++;
-    var r = computeRank();
-    writePlayerPatch({ stars: stars, rank: r });
+    // addStars re-reads stars from localStorage before incrementing, so a GM edit in
+    // another tab is never clobbered by a stale in-memory counter.
+    MA.addStars(1);
     syncPlayerHeader();
   }
 
@@ -622,9 +572,8 @@
   window.addEventListener('storage', function (e) {
     if (e.key === STORAGE_KEY) syncPlayerHeader();
   });
+  window.addEventListener(MA.EVENT_NAME, syncPlayerHeader);
 
-  var initCfg = readSharedConfig();
-  stars = Number((initCfg.player && initCfg.player.stars) || 0);
   initMap();
   drawPins();
   drawCityList();
