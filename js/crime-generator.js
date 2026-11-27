@@ -141,10 +141,220 @@
     }
   };
 
+  var SYNDICATE_TIERS = [1, 2, 3, 4, 5];
+
+  var ARCHETYPE_RANKS = {
+    cartel: {
+      Americas: {
+        1: "Runner",
+        2: "Lookout",
+        3: "Lieutenant",
+        4: "Plaza Boss",
+        5: "Kingpin"
+      },
+      default: {
+        1: "Runner",
+        2: "Lookout",
+        3: "Lieutenant",
+        4: "Enforcer",
+        5: "Boss"
+      }
+    },
+    mob: {
+      Americas: {
+        1: "Associate",
+        2: "Soldier",
+        3: "Capo",
+        4: "Underboss",
+        5: "Boss"
+      },
+      Europe: {
+        1: "Associate",
+        2: "Soldier",
+        3: "Capo",
+        4: "Underboss",
+        5: "Boss"
+      },
+      default: {
+        1: "Associate",
+        2: "Operative",
+        3: "Captain",
+        4: "Second-in-Command",
+        5: "Syndicate Head"
+      }
+    },
+    triad: {
+      Asia: {
+        1: "Blue Lantern",
+        2: "Red Pole",
+        3: "White Paper Fan",
+        4: "Deputy Vanguard",
+        5: "Dragon Head"
+      },
+      default: {
+        1: "Initiate",
+        2: "Vanguard",
+        3: "Strategist",
+        4: "Deputy",
+        5: "Clan Head"
+      }
+    },
+    yakuza: {
+      Asia: {
+        1: "Wakai-shu",
+        2: "Shatei",
+        3: "Wakagashira-hosa",
+        4: "Wakagashira",
+        5: "Kumicho"
+      },
+      default: {
+        1: "Junior Member",
+        2: "Operative",
+        3: "Senior Lieutenant",
+        4: "Deputy Head",
+        5: "Clan Boss"
+      }
+    },
+    smugglers: {
+      default: {
+        1: "Courier",
+        2: "Blockade Runner",
+        3: "Quartermaster",
+        4: "Syndicate Captain",
+        5: "Ring Mastermind"
+      }
+    },
+    default: {
+      default: {
+        1: "Tier 1 Operative",
+        2: "Tier 2 Operative",
+        3: "Tier 3 Lieutenant",
+        4: "Tier 4 Deputy",
+        5: "Tier 5 Leader"
+      }
+    }
+  };
+
+  var ARCHETYPE_PROFILES = {
+    cartel: {
+      preferredModes: ["thwart", "recovery"],
+      thwartChance: 0.65,
+      clockMultiplier: 0.9,
+      bonusClueChance: 0.75,
+      clueStyle: "route-and-timing"
+    },
+    mob: {
+      preferredModes: ["recovery", "thwart"],
+      thwartChance: 0.4,
+      clockMultiplier: 1.1,
+      bonusClueChance: 0.65,
+      clueStyle: "front-and-favor"
+    },
+    triad: {
+      preferredModes: ["thwart", "recovery"],
+      thwartChance: 0.55,
+      clockMultiplier: 1.0,
+      bonusClueChance: 0.7,
+      clueStyle: "signal-and-cipher"
+    },
+    yakuza: {
+      preferredModes: ["recovery"],
+      thwartChance: 0.3,
+      clockMultiplier: 1.15,
+      bonusClueChance: 0.7,
+      clueStyle: "strict-protocol"
+    },
+    smugglers: {
+      preferredModes: ["thwart", "recovery"],
+      thwartChance: 0.5,
+      clockMultiplier: 0.95,
+      bonusClueChance: 0.65,
+      clueStyle: "cargo-and-lanes"
+    }
+  };
+
+  function getRingOperationProfile(ring, archetype) {
+    var base = ARCHETYPE_PROFILES[archetype] || ARCHETYPE_PROFILES.smugglers;
+    var custom = (ring && ring.operationProfile) || {};
+    return Object.assign({}, base, custom);
+  }
+
+  function clampTier(tier) {
+    var n = Math.round(Number(tier) || 1);
+    return Math.max(1, Math.min(5, n));
+  }
+
+  function inferArchetype(ring, opts) {
+    if (opts && opts.archetype) return String(opts.archetype).toLowerCase();
+    if (ring && ring.archetype) return String(ring.archetype).toLowerCase();
+    if (ring && ring.id === "hosers") return "smugglers";
+    if (ring && ring.id === "night-shift") return "mob";
+    return "smugglers";
+  }
+
+  function inferRegion(ring, suspect, target, opts) {
+    if (opts && opts.region) return opts.region;
+    if (target && target.region) return target.region;
+    if (suspect && suspect.currentRegion) return suspect.currentRegion;
+    if (ring && Array.isArray(ring.homeHubs) && ring.homeHubs.length && ring.homeHubs[0].region) {
+      return ring.homeHubs[0].region;
+    }
+    return "default";
+  }
+
+  function resolveRankTitle(spec) {
+    var s = spec || {};
+    var tier = clampTier(s.tier);
+    if (s.rankTitle && String(s.rankTitle).trim()) return String(s.rankTitle).trim();
+    if (s.ring && s.ring.tierTitles && s.ring.tierTitles[tier]) {
+      return String(s.ring.tierTitles[tier]);
+    }
+    var archKey = String(s.archetype || "default").toLowerCase();
+    var archTable = ARCHETYPE_RANKS[archKey] || ARCHETYPE_RANKS.default;
+    var regionTable = (s.region && archTable[s.region]) || archTable.default || ARCHETYPE_RANKS.default.default;
+    return regionTable[tier] || ARCHETYPE_RANKS.default.default[tier];
+  }
+
   function pick(list, rng) {
     var random = typeof rng === "function" ? rng : Math.random;
     if (!Array.isArray(list) || list.length === 0) return null;
     return list[Math.floor(random() * list.length)];
+  }
+
+  function createSyndicateRing(opts) {
+    var o = opts || {};
+    var rng = typeof o.rng === "function" ? o.rng : Math.random;
+    var archetypes = ["cartel", "mob", "triad", "yakuza", "smugglers"];
+    var archetype = o.archetype ? String(o.archetype).toLowerCase() : pick(archetypes, rng);
+    var id = o.id || ("ring-" + archetype + "-" + Date.now().toString(36) + "-" + Math.floor(rng() * 1000));
+    var hubs = Array.isArray(o.homeHubs) && o.homeHubs.length
+      ? o.homeHubs
+      : [{ city: "Halifax", country: "Canada", region: o.region || "Americas", language: "English" }];
+    var region = inferRegion({ homeHubs: hubs }, null, null, o);
+
+    var titles = {};
+    SYNDICATE_TIERS.forEach(function (t) {
+      titles[t] = resolveRankTitle({
+        archetype: archetype,
+        region: region,
+        tier: t,
+        rankTitle: o.tierTitles && o.tierTitles[t]
+      });
+    });
+
+    return {
+      id: id,
+      name: o.name || ("The " + archetype.charAt(0).toUpperCase() + archetype.slice(1) + " Cell"),
+      archetype: archetype,
+      region: region,
+      isCustom: Boolean(o.isCustom),
+      motto: o.motto || "Move quiet, leave no trace.",
+      specialty: o.specialty || "Coordinated capers and cross-border drops",
+      tacticTags: Array.isArray(o.tacticTags) ? o.tacticTags.slice() : ["quiet-handling", "decoy-swap"],
+      homeHubs: hubs,
+      tierTitles: titles,
+      operationProfile: getRingOperationProfile({ operationProfile: o.operationProfile }, archetype)
+    };
   }
 
   function shuffleArray(list, rng) {
@@ -230,8 +440,6 @@
     var rings = opts.crimeRings ? Object.values(opts.crimeRings) : [];
     var suspects = Array.isArray(opts.suspects) ? opts.suspects : [];
     var crimeType = opts.crimeType || pick(DEFAULT_CRIME_TYPES, rng);
-    var mode = opts.mode || crimeType.mode || (rng() < 0.5 ? "recovery" : "thwart");
-
     var isNonSyndicate = typeof opts.forceNonSyndicate === "boolean"
       ? opts.forceNonSyndicate
       : rng() < 0.22;
@@ -259,6 +467,18 @@
       }
     }
 
+    var resolvedArchetype = !isNonSyndicate ? inferArchetype(ring, opts) : null;
+    var opProfile = !isNonSyndicate ? getRingOperationProfile(ring, resolvedArchetype) : null;
+
+    var mode = opts.mode;
+    if (!mode) {
+      if (opProfile && typeof opProfile.thwartChance === "number") {
+        mode = rng() < opProfile.thwartChance ? "thwart" : "recovery";
+      } else {
+        mode = crimeType.mode || (rng() < 0.5 ? "recovery" : "thwart");
+      }
+    }
+
     var chosenTarget = opts.target || (suspect && suspect.currentPlace
       ? {
           name: (pick(crimeType.targets, rng) || {}).name || "Local Landmark",
@@ -270,6 +490,8 @@
       : pick(crimeType.targets, rng));
 
     var target = hydrateTargetWithPlace(chosenTarget, rng);
+    var resolvedRegion = !isNonSyndicate ? inferRegion(ring, suspect, target, opts) : null;
+    var resolvedTier = !isNonSyndicate ? clampTier(opts.tier || (suspect && suspect.tier) || 1) : null;
 
     var combinedTags = Array.from(new Set([
       ...(crimeType.tacticTags || []),
@@ -301,13 +523,17 @@
       }
     }
 
-    var defaultHours = mode === "thwart"
+    var baseHours = mode === "thwart"
       ? (opts.hours || crimeType.hours || DEFAULT_THWART_HOURS)
       : (opts.hours || crimeType.hours || DEFAULT_RECOVERY_HOURS);
 
+    var scaledHours = (!opts.hours && typeof opts.durationMs !== "number" && opProfile && opProfile.clockMultiplier)
+      ? baseHours * opProfile.clockMultiplier
+      : baseHours;
+
     var totalDurationMs = typeof opts.durationMs === "number"
       ? Math.max(0, opts.durationMs)
-      : Math.round(defaultHours * HOUR_MS);
+      : Math.round(scaledHours * HOUR_MS);
 
     return {
       id: "inc-" + Date.now().toString(36) + "-" + Math.floor(rng() * 1000),
@@ -321,6 +547,17 @@
       truthCategory: isNonSyndicate ? nonSyndicateKind : "syndicate",
       ringId: isNonSyndicate ? null : (ring ? ring.id : null),
       suspectId: isNonSyndicate ? null : (suspect ? suspect.id : null),
+      ringArchetype: resolvedArchetype,
+      ringRegion: resolvedRegion,
+      operationStyle: opProfile ? opProfile.clueStyle : null,
+      suspectTier: resolvedTier,
+      suspectRankTitle: !isNonSyndicate ? resolveRankTitle({
+        archetype: resolvedArchetype,
+        region: resolvedRegion,
+        tier: resolvedTier,
+        rankTitle: opts.rankTitle || (suspect && suspect.rankTitle),
+        ring: ring
+      }) : null,
       tacticTags: selectedTags,
       observableClues: observableClues,
       twistClues: isNonSyndicate
@@ -472,6 +709,12 @@
     TACTIC_CLUES: TACTIC_CLUES,
     CONFLICTING_TAGS: CONFLICTING_TAGS,
     NON_SYNDICATE_PROFILES: NON_SYNDICATE_PROFILES,
+    SYNDICATE_TIERS: SYNDICATE_TIERS,
+    ARCHETYPE_RANKS: ARCHETYPE_RANKS,
+    ARCHETYPE_PROFILES: ARCHETYPE_PROFILES,
+    getRingOperationProfile: getRingOperationProfile,
+    resolveRankTitle: resolveRankTitle,
+    createSyndicateRing: createSyndicateRing,
     createCrime: createCrime,
     advanceCrime: advanceCrime,
     advanceAllCrimes: advanceAllCrimes

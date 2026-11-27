@@ -10,12 +10,17 @@
  *   midnight_agency_settings_v1  -> device settings (performanceMode), owned by factbook-loader.js
  *   midnight_agency_gate_v1      -> sessionStorage only: "passcode gate passed" marker
  *
- * Rank contract
- *   stars >= 5 -> Field Agent (level 3)
- *   stars >= 2 -> Operative   (level 2)
- *   else       -> Rookie      (level 1)
+ * Rank contract (7-tier progression paced across multi-case syndicate arcs)
+ *   stars >= 27 -> Spymaster       (level 7, legacyTier 3)
+ *   stars >= 20 -> Agent           (level 6, legacyTier 3)
+ *   stars >= 14 -> Specialist      (level 5, legacyTier 3)
+ *   stars >= 9  -> Operative       (level 4, legacyTier 2)
+ *   stars >= 5  -> Junior Analyst  (level 3, legacyTier 2)
+ *   stars >= 2  -> Rookie          (level 2, legacyTier 1)
+ *   else        -> Recruit         (level 1, legacyTier 1)
  *   player.rank in storage is only a cached copy of the derived rank; stars always win.
- *   The numeric level is what WorldFactbook TRAVEL_MODES[*].minRank compares against.
+ *   The numeric level (1..7) tracks full rank progression; legacyRankTier (1..3) maps onto
+ *   3-tier rule buckets where needed.
  */
 (function (global) {
   'use strict';
@@ -30,11 +35,24 @@
 
   // Ordered low -> high. minStars is the promotion threshold.
   var RANKS = [
-    { name: 'Rookie',      level: 1, minStars: 0 },
-    { name: 'Operative',   level: 2, minStars: 2 },
-    { name: 'Field Agent', level: 3, minStars: 5 }
+    { name: 'Recruit',        level: 1, legacyTier: 1, minStars: 0,  codenameUnlocked: false },
+    { name: 'Rookie',         level: 2, legacyTier: 1, minStars: 2,  codenameUnlocked: false },
+    { name: 'Junior Analyst', level: 3, legacyTier: 2, minStars: 5,  codenameUnlocked: true  },
+    { name: 'Operative',      level: 4, legacyTier: 2, minStars: 9,  codenameUnlocked: true  },
+    { name: 'Specialist',     level: 5, legacyTier: 3, minStars: 14, codenameUnlocked: true  },
+    { name: 'Agent',          level: 6, legacyTier: 3, minStars: 20, codenameUnlocked: true  },
+    { name: 'Spymaster',      level: 7, legacyTier: 3, minStars: 27, codenameUnlocked: true  }
   ];
-  var RANK_LEVELS = { ROOKIE: 1, OPERATIVE: 2, FIELD_AGENT: 3 };
+
+  var RANK_LEVELS = {
+    RECRUIT: 1,
+    ROOKIE: 2,
+    JUNIOR_ANALYST: 3,
+    OPERATIVE: 4,
+    SPECIALIST: 5,
+    AGENT: 6,
+    SPYMASTER: 7
+  };
 
   function rankByName(name) {
     for (var i = 0; i < RANKS.length; i++) {
@@ -54,11 +72,21 @@
   }
 
   // Accepts a config object, a rank name, or a star count.
+  function rankMeta(input) {
+    if (typeof input === 'number') return rankByName(rankFromStars(input));
+    if (typeof input === 'string') return rankByName(input);
+    if (input && input.player) return rankByName(effectiveRank(input));
+    return RANKS[0];
+  }
+
+  // Returns 1..7 for the full 7-tier progression ladder.
   function rankLevel(input) {
-    if (typeof input === 'number') return rankByName(rankFromStars(input)).level;
-    if (typeof input === 'string') return rankByName(input).level;
-    if (input && input.player) return rankByName(effectiveRank(input)).level;
-    return 1;
+    return rankMeta(input).level;
+  }
+
+  // Returns 1..3 for engines/tables keyed to legacy 3-tier buckets.
+  function legacyRankTier(input) {
+    return rankMeta(input).legacyTier;
   }
 
   function starsForRank(name) {
@@ -70,13 +98,32 @@
   }
 
   function isPromoted(cfg) {
-    return effectiveRank(cfg) !== 'Rookie';
+    return rankLevel(cfg) > 1;
+  }
+
+  function canClaimCodename(cfgOrRank) {
+    return !!rankMeta(cfgOrRank).codenameUnlocked;
+  }
+
+  function nextRankInfo(stars) {
+    var n = Math.max(0, Math.floor(Number(stars) || 0));
+    for (var i = 0; i < RANKS.length; i++) {
+      if (n < RANKS[i].minStars) {
+        return {
+          name: RANKS[i].name,
+          level: RANKS[i].level,
+          minStars: RANKS[i].minStars,
+          starsRemaining: RANKS[i].minStars - n
+        };
+      }
+    }
+    return null;
   }
 
   function defaultConfig() {
     return {
       gm: { userName: 'GM', passCode: 'MIDNIGHT-GM', clearanceKey: 'MIDNIGHT-GM' },
-      player: { rank: 'Rookie', userName: '', passCode: '', stars: 0, trust: 5 },
+      player: { rank: 'Recruit', userName: '', passCode: '', stars: 0, trust: 5 },
       passcodeToppings: ['pickles', 'olives', 'mushrooms'],
       secretPhrase: 'pickles, olives, and mushrooms',
       gateUrl: GATE_URL,
@@ -232,11 +279,15 @@
     RANKS: RANKS,
     RANK_LEVELS: RANK_LEVELS,
     rankFromStars: rankFromStars,
+    rankMeta: rankMeta,
     rankLevel: rankLevel,
+    legacyRankTier: legacyRankTier,
     starsForRank: starsForRank,
     starsForGmRank: starsForGmRank,
     effectiveRank: effectiveRank,
     isPromoted: isPromoted,
+    canClaimCodename: canClaimCodename,
+    nextRankInfo: nextRankInfo,
     defaultConfig: defaultConfig,
     normalize: normalize,
     read: read,

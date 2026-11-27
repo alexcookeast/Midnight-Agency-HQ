@@ -233,8 +233,8 @@ function solveSetup(seed, rank) {
   assert.equal(s.c.status, "solved"); assert.equal(s.c.crime.status, "resolved"); assert.equal(s.c.crime.resolution.outcome, "caught");
   assert.equal(sm.totalStars, 2, "base + sharp"); assert.equal(sm.stars.length, 2);
   const after = MidnightAgencyConfig.read().player;
-  assert.equal(after.stars, before.stars + 2); assert.equal(after.rank, "Operative"); assert.equal(after.trust, 4);
-  assert.equal(sm.rankBefore, "Rookie"); assert.equal(sm.rankAfter, "Operative");
+  assert.equal(after.stars, before.stars + 2); assert.equal(after.rank, "Rookie"); assert.equal(after.trust, 4);
+  assert.equal(sm.rankBefore, "Recruit"); assert.equal(sm.rankAfter, "Rookie");
   assert.equal(s.st.agents[s.agentId].xp, 5); assert.equal(s.st.agents[s.agentId].rapport, 4);
   assert(sm.newStamps.length >= 1 && s.st.passport.length === sm.newStamps.length);
   assert.equal(sm.timeTakenMs, 2 * HR); assert.equal(s.st.stats.solved, 1);
