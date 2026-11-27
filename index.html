@@ -247,14 +247,14 @@
 <div class="pz-shell" id="pizza" role="region" aria-label="Uncle Alex's Pizza Parlour">
   <header class="pz-top">
     <div class="pz-head">
-      <svg width="60" height="60" viewBox="0 0 64 64" aria-hidden="true">
-        <circle cx="32" cy="32" r="30" fill="#B8260F" stroke="#FFF4E0" stroke-width="3"/>
-        <path d="M13 21 Q32 7 51 21 L32 55 Z" fill="#FFC857" stroke="#F0A830" stroke-width="2"/>
-        <path d="M13 21 Q32 7 51 21" fill="none" stroke="#C97A1E" stroke-width="5" stroke-linecap="round"/>
-        <circle cx="26" cy="25" r="3.2" fill="#B8260F"/><circle cx="38" cy="25" r="3.2" fill="#B8260F"/><circle cx="32" cy="46" r="3" fill="#B8260F"/>
-        <circle cx="27" cy="31" r="2.4" fill="#3A1F10"/><circle cx="37" cy="31" r="2.4" fill="#3A1F10"/>
-        <path d="M19 40 Q26 33 32 39 Q38 33 45 40 Q38 46 32 41 Q26 46 19 40Z" fill="#3A1F10"/>
-      </svg>
+      <svg id="pzLogo" width="60" height="60" viewBox="0 0 64 64" aria-label="Uncle Alex's Pizza Parlour logo" style="outline:none;-webkit-tap-highlight-color:transparent">
+          <circle cx="32" cy="32" r="30" fill="#B8260F" stroke="#FFF4E0" stroke-width="3"/>
+          <path d="M13 21 Q32 7 51 21 L32 55 Z" fill="#FFC857" stroke="#F0A830" stroke-width="2"/>
+          <path d="M13 21 Q32 7 51 21" fill="none" stroke="#C97A1E" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="26" cy="25" r="3.2" fill="#B8260F"/><circle cx="38" cy="25" r="3.2" fill="#B8260F"/><circle cx="32" cy="46" r="3" fill="#B8260F"/>
+          <circle cx="27" cy="31" r="2.4" fill="#3A1F10"/><circle cx="37" cy="31" r="2.4" fill="#3A1F10"/>
+          <path class="pz-stache" d="M19 40 Q26 33 32 39 Q38 33 45 40 Q38 46 32 41 Q26 46 19 40Z" fill="#3A1F10"/>
+        </svg>
       <div>
         <div class="pz-name">Uncle Alex's</div>
         <div class="pz-sub">PIZZA PARLOUR</div>
@@ -310,7 +310,7 @@
       <div style="font-size:12px;color:#7a5a46;text-align:center">Or select a quick pizza reply below:</div>
       <div class="ph-chips">
         <button class="ph-chip" type="button" data-say="One large pepperoni pizza">One Large Pepperoni</button>
-        <button class="ph-chip" type="button" data-say="Pickles, olives, and mushrooms">Pickles, Olives, and Mushrooms</button>
+        <button class="ph-chip" type="button" data-say="Extra cheese and green peppers">Extra Cheese &amp; Green Peppers</button>
         <button class="ph-chip" type="button" data-say="Two medium pepperoni pizzas and garlic fingers">Tuesday Special &amp; Garlic Fingers</button>
       </div>
     </div>
@@ -648,14 +648,14 @@
     function oneCycle() {
       current++;
       var stopRing = startDualTone(440, 480, 0.14);
-      if (typeof onStep === 'function') onStep('Ringing (' + current + ' of ' + ringCount + ')...');
+      if (typeof onStep === 'function') onStep(current === 1 ? 'Ringing...' : 'Still ringing...');
       timers.push(setTimeout(function () {
         stopRing(0.015);
         if (current >= ringCount) {
           if (typeof onComplete === 'function') onComplete();
           return;
         }
-        if (typeof onStep === 'function') onStep('Ringing... pause before ring ' + (current + 1) + '.');
+        if (typeof onStep === 'function') onStep('Ringing...');
         timers.push(setTimeout(oneCycle, 1800));
       }, 1300));
     }
@@ -738,49 +738,8 @@
         secretConfirm: 'Special toppings. Got it.',
         normalReply: 'Heard you loud and clear. Want extra cheese or garlic fingers on that?'
       }
-    },
-    chief: {
-      name: 'The Chief',
-      number: '5065550142',
-      voiceName: '',
-      lang: 'en',
-      pitch: 0.95,
-      rate: 0.97,
-      volume: 1.0,
-      voicemailChance: 0,
-      foley: 'chime',
-      prefer: ['ryan', 'guy', 'daniel', 'arthur', 'david', 'uk english'],
-      scripts: {
-        greeting: 'Order confirmed on the board. Heading to the passcode gate now.',
-        nearPhone: 'Line is clear. State your order or head to the passcode gate.',
-        ranToPhone: 'Line is active. Keep it brief. What is the order?',
-        voicemail: 'Field office line is unavailable. Leave your code word.',
-        secretConfirm: 'Confirmed. Opening the passcode gate.',
-        normalReply: 'Noted. Let me know if you need anything else.'
-      }
-    },
-    santa: {
-      name: 'Santa',
-      number: '5065550142',
-      voiceName: '',
-      lang: 'en',
-      pitch: 0.9,
-      rate: 0.92,
-      volume: 1.0,
-      voicemailChance: 0,
-      foley: 'chime',
-      prefer: ['davis', 'william', 'guy', 'daniel', 'david', 'arthur'],
-      scripts: {
-        greeting: 'Ho, ho, ho! Even up north we love a hot pizza from Uncle Alex\'s.',
-        nearPhone: 'Right by the sleigh bell! What are we ordering tonight?',
-        ranToPhone: 'Reindeer were getting restless, so make it quick! What are we ordering?',
-        voicemail: 'Santa and the elves are out checking the list. Leave a message after the chime.',
-        secretConfirm: 'That secret order made the nice list. Onward to the passcode gate!',
-        normalReply: 'Sounds delicious! Make sure to save a slice for the workshop.'
-      }
     }
   };
-
   function getNpcConfig(npcId) {
     var key = npcId || 'waitress';
     var base = DEFAULT_NPCS[key] || {
@@ -855,6 +814,12 @@
     voices = window.speechSynthesis.getVoices() || [];
   }
 
+  function appendLineChunk(chunk) {
+    var el = $('phLine');
+    if (!el || !chunk) return;
+    el.textContent = el.textContent ? (el.textContent + ' ' + chunk) : chunk;
+  }
+
   function speak(npcId, spokenText, captionText, onDone, sOpts) {
     sOpts = sOpts || {};
     var cfg = getNpcConfig(npcId);
@@ -863,31 +828,59 @@
     if (!sOpts.skipFoley) {
       try { runFoley(cfg.foley); } catch (e) {}
     }
-    if (!window.speechSynthesis || !text) {
-      if (typeof onDone === 'function') timers.push(setTimeout(onDone, 900));
+    var parts = text
+      ? (text.match(/[^.!?]+[.!?]*/g) || [text]).map(function (p) { return p.trim(); }).filter(Boolean)
+      : [];
+    if (!parts.length && text) parts = [text];
+
+    function revealChunk(idx) {
+      if (typeof sOpts.onChunk === 'function') {
+        sOpts.onChunk(parts[idx] || '', idx, parts);
+      }
+    }
+
+    if (!window.speechSynthesis || !parts.length) {
+      var fallbackIdx = 0;
+      function stepFallback() {
+        if (fallbackIdx >= parts.length) {
+          if (typeof onDone === 'function') onDone();
+          return;
+        }
+        revealChunk(fallbackIdx);
+        fallbackIdx++;
+        timers.push(setTimeout(stepFallback, 950));
+      }
+      stepFallback();
       return;
     }
+
     var v = resolveVoice(cfg);
     var basePitch = typeof sOpts.pitchOverride === 'number' ? sOpts.pitchOverride : (typeof cfg.pitch === 'number' ? cfg.pitch : 1.0);
     var baseRate = typeof sOpts.rateOverride === 'number' ? sOpts.rateOverride : (typeof cfg.rate === 'number' ? cfg.rate : 1.0);
     var vol = typeof cfg.volume === 'number' ? cfg.volume : 1.0;
-    var parts = (text.match(/[^.!?,;:]+[.!?,;:]*/g) || [text]).map(function (p) { return p.trim(); }).filter(Boolean);
     var gen = ++speakGen, idx = 0;
 
     function jitter(x, amt) { return x + (Math.random() - 0.5) * amt; }
     function finish() { if (typeof onDone === 'function') onDone(); }
     function next() {
-      if (gen !== speakGen) return;                    // a newer line replaced this one
+      if (gen !== speakGen) return;
       if (idx >= parts.length) { finish(); return; }
-      var part = parts[idx++];
+      var currentIdx = idx++;
+      var part = parts[currentIdx];
       var utt = new SpeechSynthesisUtterance(part);
       if (v) utt.voice = v;
       utt.pitch = Math.max(0, Math.min(2, jitter(basePitch, 0.06)));
       utt.rate = Math.max(0.1, Math.min(3, jitter(baseRate, 0.06)));
       utt.volume = vol;
+      utt.onstart = function () {
+        if (gen !== speakGen) return;
+        revealChunk(currentIdx);
+      };
       utt.onend = function () {
         if (gen !== speakGen) return;
-        var pause = (/[.!?]$/.test(part) ? 230 : 110) + Math.random() * 100;
+        var basePause = /[.!?]$/.test(part) ? 230 : 110;
+        if (/,$/.test(part)) basePause = Math.round(basePause * 0.5);
+        var pause = basePause + Math.random() * 100;
         timers.push(setTimeout(next, pause));
       };
       utt.onerror = function (ev) {
@@ -895,7 +888,12 @@
         if (ev && (ev.error === 'canceled' || ev.error === 'interrupted')) return;
         finish();
       };
-      try { window.speechSynthesis.speak(utt); } catch (e) { finish(); }
+      try {
+        window.speechSynthesis.speak(utt);
+      } catch (e) {
+        revealChunk(currentIdx);
+        finish();
+      }
     }
     timers.push(setTimeout(next, sOpts.skipFoley ? 20 : 180));
   }
@@ -915,30 +913,34 @@
   }
 
   function handleCallerPhrase(raw) {
-  var txt = (raw || '').toLowerCase();
-  var cfg = readSharedConfig();
-  var waitressCfg = getNpcConfig('waitress');
-  var reqToppings = Array.isArray(cfg.passcodeToppings) && cfg.passcodeToppings.length
-    ? cfg.passcodeToppings.map(function (t) { return String(t).toLowerCase().trim(); })
-    : ['pickles', 'olives', 'mushrooms'];
+    var txt = (raw || '').toLowerCase();
+    var cfg = readSharedConfig();
+    var waitressCfg = getNpcConfig('waitress');
+    var reqToppings = Array.isArray(cfg.passcodeToppings) && cfg.passcodeToppings.length
+      ? cfg.passcodeToppings.map(function (t) { return String(t).toLowerCase().trim(); })
+      : ['pickles', 'olives', 'mushrooms'];
 
-  $('phHeard').textContent = 'You ordered: "' + raw + '"';
+    $('phHeard').textContent = 'You ordered: "' + raw + '"';
 
-  var matchesSecret = reqToppings.every(function (t) { return txt.indexOf(t) !== -1; });
-  if (matchesSecret) {
-    var confirmLine = waitressCfg.scripts.secretConfirm || 'Got that order down. I will get that right in for you.';
-    setPhoneUI(waitressCfg.name, confirmLine, 'You ordered: "' + raw + '"', true);
-    speak('waitress', confirmLine, confirmLine, function () {
-      closePhoneModal(true);
-      goToPasscodeGate();
+    var matchesSecret = reqToppings.every(function (t) { return txt.indexOf(t) !== -1; });
+    if (matchesSecret) {
+      var confirmLine = waitressCfg.scripts.secretConfirm || 'Got that order down. I will get that right in for you.';
+      setPhoneUI(waitressCfg.name, '', 'You ordered: "' + raw + '"', true);
+      speak('waitress', confirmLine, confirmLine, function () {
+        closePhoneModal(true);
+        goToPasscodeGate();
+      }, {
+        onChunk: appendLineChunk
+      });
+      return;
+    }
+
+    var reply = waitressCfg.scripts.normalReply || '';
+    setPhoneUI(waitressCfg.name, '', 'You ordered: "' + raw + '"', false);
+    speak('waitress', reply, reply, null, {
+      onChunk: appendLineChunk
     });
-    return;
   }
-
-  var reply = waitressCfg.scripts.normalReply;
-  setPhoneUI(waitressCfg.name, reply, 'You ordered: "' + raw + '"', false);
-  speak('waitress', reply, reply);
-}
 
   function startSpeechInput() {
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -977,25 +979,26 @@
     var scripts = person.scripts || {};
     var baseRate = typeof person.rate === 'number' ? person.rate : 1.0;
     var basePitch = typeof person.pitch === 'number' ? person.pitch : 1.0;
-    var spoken = scripts.greeting;
+    var spoken = scripts.greeting || '';
     var rateOverride = null;
     var pitchOverride = null;
 
     if (mode === 'near') {
-      spoken = scripts.nearPhone || scripts.greeting;
+      spoken = scripts.nearPhone || scripts.greeting || '';
       rateOverride = Math.max(0.75, baseRate * 0.96);
       pitchOverride = Math.max(0.55, basePitch - 0.03);
     } else if (mode === 'curt') {
-      spoken = scripts.ranToPhone || scripts.greeting;
+      spoken = scripts.ranToPhone || scripts.greeting || '';
       rateOverride = Math.min(1.4, baseRate * 1.18);
       pitchOverride = Math.min(1.6, basePitch + 0.06);
     }
 
     $('avPhoneModal').classList.add('open');
-    setPhoneUI(person.name, spoken, '', false);
+    setPhoneUI(person.name, '', '', false);
     speak(key, spoken, spoken, null, {
       rateOverride: rateOverride,
-      pitchOverride: pitchOverride
+      pitchOverride: pitchOverride,
+      onChunk: appendLineChunk
     });
   }
 
@@ -1030,8 +1033,13 @@
               var tone = startDualTone(1000, 1000, 0.11);
               timers.push(setTimeout(function () {
                 tone(0.01);
-                setPhoneUI('Answering Machine', vmText);
-                speak(key, vmText, vmText, null, { skipFoley: true, pitchOverride: 0.98, rateOverride: 1.0 });
+                setPhoneUI('Answering Machine', '', '', false);
+                speak(key, vmText, vmText, null, {
+                  skipFoley: true,
+                  pitchOverride: 0.98,
+                  rateOverride: 1.0,
+                  onChunk: appendLineChunk
+                });
               }, 450));
             } else {
               openPhoneModal(key, mode);
@@ -1074,6 +1082,36 @@
     closePhoneModal: closePhoneModal
   };
 })();
+
+(function () {
+    var logo = document.getElementById('pzLogo');
+    var stache = logo ? logo.querySelector('.pz-stache') : null;
+    if (!logo || !stache) return;
+
+    stache.style.transformBox = 'fill-box';
+    stache.style.transformOrigin = 'center';
+
+    logo.addEventListener('click', function () {
+      logo.blur();
+      if (typeof stache.animate === 'function') {
+        stache.animate([
+          { transform: 'rotate(0deg) scale(1, 1)' },
+          { transform: 'rotate(-8deg) scale(1.07, 0.93)', offset: 0.2 },
+          { transform: 'rotate(9deg) scale(1.09, 0.92)', offset: 0.45 },
+          { transform: 'rotate(-5deg) scale(1.04, 0.96)', offset: 0.7 },
+          { transform: 'rotate(3deg) scale(1.01, 0.99)', offset: 0.85 },
+          { transform: 'rotate(0deg) scale(1, 1)' }
+        ], {
+          duration: 420,
+          easing: 'cubic-bezier(0.36, 0.07, 0.19, 0.97)'
+        });
+      }
+      try {
+        if (typeof beep === 'function') beep(620, 0.04);
+      } catch (e) {}
+    });
+  })();
+
 </script>
 </body>
 </html>
