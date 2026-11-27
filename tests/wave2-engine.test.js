@@ -61,16 +61,17 @@ let passed = 0; const ok = (name) => { passed += 1; console.log("  ok  " + name)
   AR.adjustRapport(ag, 10); assert.equal(ag.rapport, 5); AR.adjustRapport(ag, -10); assert.equal(ag.rapport, 1);
   ok("xp levels 1->2->3 and rapport clamps to 1-5");
 
-  const u2 = AR.newlyUnlockable(["mika", "amara", "luca"], 2, 0).map(a => a.id);
-  assert.deepEqual(u2.sort(), ["kofi", "priya"]);
-  assert.deepEqual(AR.newlyUnlockable(["mika"], 1, 3).map(a => a.id), ["diego"]);
+  assert.deepEqual(AR.newlyUnlockable(["mika", "amara", "luca"], 2, 0).map(a => a.id), ["priya"]);
+  assert.deepEqual(AR.newlyUnlockable(["mika", "amara", "luca"], 3, 0).map(a => a.id).sort(), ["kofi", "priya"]);
+  assert.deepEqual(AR.newlyUnlockable(["mika"], 1, 8).map(a => a.id), ["diego"]);
+  assert.deepEqual(AR.newlyUnlockable(["mika"], 1, 7).map(a => a.id), []);
   ok("agents unlock with rank and solved-case milestones");
 }
 
 // ---------- case creation, clues, candidates
 for (const rank of [1, 2, 3]) {
   for (let seed = 1; seed <= 25; seed++) {
-    const ctx = mk(seed * 7 + rank, T0, rank);
+    const ctx = mk(seed * 7 + rank, T0, [0, 1, 3, 5][rank]); // tier -> ladder level
     const st = CE.newState(ctx);
     const c = CE.createCase(st, ctx, {});
     assert.equal(c.route.length, CE.RULES.routeLengthByRank[rank]);
@@ -83,7 +84,7 @@ for (const rank of [1, 2, 3]) {
       for (const id of stop.candidateIds) {
         if (id === truth.id) continue;
         const df = facts(WF.findPlace(id));
-        assert(stop.parts.some(p => String(p.value) !== String(({ currency: df.currencyCode, language: df.language, geography: df.geography, region: df.region, flag: df.flag })[p.key])), "every decoy is eliminable by the clue");
+        assert(stop.parts.some(p => String(p.value) !== String(({ currency: df.currencyCode, language: df.language, geography: df.geography, region: df.region, flag: df.flagSrc })[p.key])), "every decoy is eliminable by the clue");
       }
     }
     assert(c.lineup.length >= 3 && c.lineup.some(s => s.id === c.suspect.id));
@@ -164,7 +165,7 @@ ok("cases: route/clue/decoy/lineup size scale with rank; every decoy can be elim
 {
   let luckyTrail = 0, luckySuspect = 0, runs = 0, trailGot = 0;
   for (let seed = 1; seed <= 300; seed++) {
-    const ctx = mk(1000 + seed, T0, 2);
+    const ctx = mk(1000 + seed, T0, 3);
     const st = CE.newState(ctx); const c = CE.createCase(st, ctx, {});
     const id = Object.keys(st.agents)[seed % 3];
     st.agents[id].stationPlaceId = c.route[0]; st.agents[id].status = "onScene";
@@ -326,7 +327,7 @@ function solveSetup(seed, rank) {
 
 // ---------- persistence round trip + roster unlocks
 {
-  const ctx = mk(77, T0, 3);
+  const ctx = mk(77, T0, 4);
   const st = CE.newState(ctx); CE.createCase(st, ctx, {});
   CE.save(st);
   const back = CE.load(ctx);
@@ -334,7 +335,7 @@ function solveSetup(seed, rank) {
   const unlocked = CE.syncRoster(st, ctx).map(a => a.id).sort();
   assert.deepEqual(unlocked, ["elsa", "kofi", "priya"].filter(id => !st.agents[id] || true).sort().filter(id => unlocked.includes(id)));
   assert(Object.keys(st.agents).length >= 6);
-  ok("state survives a JSON round trip; Field Agent rank unlocks the roster");
+  ok("state survives a JSON round trip; Operative rank unlocks Priya, Kofi and Elsa");
 }
 
 console.log("\n" + passed + " groups passed");

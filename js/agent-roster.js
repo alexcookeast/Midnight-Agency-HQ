@@ -31,15 +31,15 @@
       quirk: "Reads the small print on everything, even cereal boxes.", voice: { pitch: 1.1, rate: 0.95 } },
     { id: "amara", name: "Amara Diallo", badge: "🦁", homeRegion: "Africa", specialty: "locals", unlock: { start: true },
       quirk: "Can make friends with a market stall in under a minute.", voice: { pitch: 1.0, rate: 1.0 } },
-    { id: "kofi", name: "Kofi Mensah", badge: "🐢", homeRegion: "Africa", specialty: "transit", unlock: { rank: 2 },
+    { id: "kofi", name: "Kofi Mensah", badge: "🐢", homeRegion: "Africa", specialty: "transit", unlock: { rank: 3 },
       quirk: "Always knows which bus is running late.", voice: { pitch: 0.85, rate: 0.95 } },
     { id: "luca", name: "Luca Ferrari", badge: "🐺", homeRegion: "Europe", specialty: "records", unlock: { start: true },
       quirk: "Sketches every suspect in the margin of his notebook.", voice: { pitch: 0.9, rate: 1.0 } },
-    { id: "elsa", name: "Elsa Lindqvist", badge: "❄️", homeRegion: "Europe", specialty: "locals", unlock: { rank: 3 },
+    { id: "elsa", name: "Elsa Lindqvist", badge: "❄️", homeRegion: "Europe", specialty: "locals", unlock: { rank: 4 },
       quirk: "Never takes off her bright red scarf.", voice: { pitch: 1.15, rate: 0.9 } },
     { id: "sofia", name: "Sofia Reyes", badge: "🦋", homeRegion: "Americas", specialty: "locals", unlock: { start: true },
       quirk: "Hums a different song in every city.", voice: { pitch: 1.2, rate: 1.1 } },
-    { id: "diego", name: "Diego Castillo", badge: "🦅", homeRegion: "Americas", specialty: "transit", unlock: { solved: 3 },
+    { id: "diego", name: "Diego Castillo", badge: "🦅", homeRegion: "Americas", specialty: "transit", unlock: { solved: 8 },
       quirk: "Packs one tiny umbrella for every kind of weather.", voice: { pitch: 0.8, rate: 1.0 } }
   ];
 

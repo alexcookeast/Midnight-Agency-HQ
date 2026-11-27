@@ -143,6 +143,7 @@
     var rankBefore = cfg && cfg.read ? cfg.read().player.rank : null;
     var trustBefore = cfg && cfg.read ? cfg.read().player.trust : null;
     if (cfg && typeof cfg.addStars === "function") cfg.addStars(totalStars);
+    if (cfg && typeof cfg.recordCaseSolved === "function") cfg.recordCaseSolved();
     if (sharp) applyTrust(ctx, 1);
     var after = cfg && cfg.read ? cfg.read().player : null;
 

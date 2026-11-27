@@ -55,7 +55,7 @@ const ok = (cond, msg) => { checks += 1; assert(cond, msg); };
   let cases = 0;
   for (let s = 1; s <= 120; s += 1) {
     const rank = 1 + (s % 3);
-    const { ctx, st } = setup(s, rank);
+    const { ctx, st } = setup(s, [0, 1, 3, 5][rank]); // tier 1..3 -> ladder levels
     const c = CE.createCase(st, ctx, {});
     cases += 1;
     ok(c.route.length === { 1: 3, 2: 4, 3: 5 }[rank], `route length for rank ${rank}`);
@@ -71,7 +71,7 @@ const ok = (cond, msg) => { checks += 1; assert(cond, msg); };
         if (cid === c.route[i]) continue;
         const pf = facts(place(cid));
         ok(stop.parts.some((p) => {
-          const v = { currency: pf && pf.currencyCode, language: pf && pf.language, geography: pf && pf.geography, region: pf && pf.region, flag: pf && pf.flag }[p.key];
+          const v = { currency: pf && pf.currencyCode, language: pf && pf.language, geography: pf && pf.geography, region: pf && pf.region, flag: pf && pf.flagSrc }[p.key];
           return String(v) !== p.value;
         }), `decoy ${cid} must contradict clue for ${c.route[i]}`);
       }
@@ -230,7 +230,7 @@ function playFull(s, rank, mode) {
   ok(WE.leaderOdds(4) >= 0.90 && WE.leaderOdds(9) >= 0.90, "4th+ 90-100%");
   let exposures = 0, leaderCases = 0;
   for (let s = 200; s < 230; s += 1) {
-    const { ctx, st } = setup(s, 3);
+    const { ctx, st } = setup(s, 5);
     const ringId = Object.keys(roster.crimeRings)[0];
     let guard = 0;
     while (guard++ < 12) {
@@ -260,8 +260,8 @@ function playFull(s, rank, mode) {
   const before = Object.keys(st.agents).length;
   ctx.rankLevel = 2; CE.syncRoster(st, ctx);
   ok(Object.keys(st.agents).length > before, "rank 2 unlocks agents");
-  ctx.rankLevel = 3; CE.syncRoster(st, ctx);
-  ok(Object.keys(st.agents).includes("elsa"), "rank 3 unlocks Elsa");
+  ctx.rankLevel = 4; CE.syncRoster(st, ctx);
+  ok(Object.keys(st.agents).includes("elsa"), "Operative (level 4) unlocks Elsa");
   // stars earned by a win promote the player and unlock the new agents in the same summary
   {
     const { ctx, st } = setup(21, 1);
@@ -271,7 +271,7 @@ function playFull(s, rank, mode) {
     const fa = Object.values(st.agents).find((a) => a.stationPlaceId === c.route[c.route.length - 1]);
     WE.printWarrant(st, ctx, c.id, c.suspect.id);
     const r = WE.attemptBust(st, ctx, { caseId: c.id, agentId: fa.id });
-    ok(MA.read().player.rank !== "Rookie" && r.summary.unlockedAgents.length > 0, "promotion unlocks agents in the same win");
+    ok(MA.read().player.rank === "Rookie" && MA.read().player.solved === 1 && r.summary.unlockedAgents.includes("priya"), "Rookie promotion unlocks Priya in the same win");
   }
   console.log("7. roster unlocks OK");
 }

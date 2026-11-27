@@ -13,7 +13,7 @@
  * ctx = {
  *   now:       ms timestamp
  *   rng:       () => [0,1)
- *   rankLevel: 1..3  (MidnightAgencyConfig.rankLevel)
+ *   rankLevel: 1..7  (MidnightAgencyConfig.rankLevel; rule tables bucket it to tiers 1..3)
  *   roster:    suspects.json merged with crime-rings.json ({ ...suspects, crimeRings })
  *   facts:     (place) => facts|null   (see factsFromCountry)
  *   timeScale: optional dev speed-up (travel is divided by it, crime clock multiplied by it)
@@ -72,7 +72,14 @@
     return a;
   }
   function placeById(id) { return global.WorldFactbook.findPlace(id); }
-  function rankKey(ctx) { return Math.min(3, Math.max(1, Number(ctx && ctx.rankLevel) || 1)); }
+  // ctx.rankLevel is the full 1..7 ladder (MidnightAgencyConfig.rankLevel). Rule tables use the
+  // 1..3 tier bucket (Recruit/Rookie=1, Junior Analyst/Operative=2, Specialist+=3); unlocks use the level.
+  function rankLevelOf(ctx) { return Math.min(7, Math.max(1, Math.floor(Number(ctx && ctx.rankLevel) || 1))); }
+  function rankKey(ctx) {
+    if (ctx && ctx.rankTier) return Math.min(3, Math.max(1, Math.floor(Number(ctx.rankTier))));
+    var l = rankLevelOf(ctx);
+    return l <= 2 ? 1 : (l <= 4 ? 2 : 3);
+  }
   function uid(prefix, rng) { return prefix + "-" + Date.now().toString(36) + "-" + Math.floor(rng() * 100000).toString(36); }
 
   // ------------------------------------------------------------------ place facts for clues
@@ -91,7 +98,8 @@
       languages: culture.languages || [],
       geography: geo.isIsland ? "island" : (geo.isLandlocked ? "landlocked" : "coastal"),
       region: c.region || (place && place.region) || null,
-      flag: (culture.flag && culture.flag.description) || null,
+      flag: (culture.flag && culture.flag.svgPath) || null,   // image path; the description text names the country, so never shown as a clue
+      flagSrc: (culture.flag && culture.flag.svgPath) || null,
       capital: (c.capital && c.capital.name) || null,
       climate: geo.climate || null
     };
@@ -111,7 +119,7 @@
       if (facts.languages && facts.languages.length) rows.push({ label: "Languages", text: facts.languages.slice(0, 3).join(", ") });
       if (facts.geography) rows.push({ label: "Coast", text: facts.geography === "island" ? "An island nation" : facts.geography === "landlocked" ? "No ocean coast" : "Has an ocean coast" });
       if (facts.region) rows.push({ label: "Continent", text: facts.region });
-      if (facts.flag) rows.push({ label: "Flag", text: facts.flag });
+      if (facts.flagSrc) rows.push({ label: "Flag", text: "Official flag", flagSrc: facts.flagSrc });
     }
     return rows;
   }
@@ -139,7 +147,7 @@
     },
     flag: {
       value: function (f) { return f.flag; },
-      text: function (f) { return "dropped a ticket stub showing a flag: " + f.flag; }
+      text: function () { return "dropped a ticket stub showing the flag in the picture"; }
     }
   };
 
@@ -183,7 +191,9 @@
     var decoys = shuffle(eligibleDecoys, rng).slice(0, RULES.decoysByRank[rank]);
 
     var parts = chosenKeys.map(function (k) {
-      return { key: k, value: clueValue(k, truthFacts), text: CLUE_KINDS[k].text(truthFacts) };
+      var part = { key: k, value: clueValue(k, truthFacts), text: CLUE_KINDS[k].text(truthFacts) };
+      if (k === "flag") part.flagSrc = truthFacts.flagSrc;
+      return part;
     });
 
     c.stops[idx] = {
@@ -317,7 +327,7 @@
   // Unlock roster agents that rank / solved count now allow. Returns the defs unlocked.
   function syncRoster(state, ctx) {
     var ids = Object.keys(state.agents);
-    var fresh = global.AgentRoster.newlyUnlockable(ids, rankKey(ctx), state.stats.solved);
+    var fresh = global.AgentRoster.newlyUnlockable(ids, rankLevelOf(ctx), state.stats.solved);
     fresh.forEach(function (def) {
       state.agents[def.id] = global.AgentRoster.unlockAgent(def, global.WorldFactbook.PLACES, rngOf(ctx));
     });
@@ -507,7 +517,9 @@
       var more = Object.keys(CLUE_KINDS).filter(function (k) { return have.indexOf(k) === -1 && clueValue(k, facts); });
       var k2 = pickOne(more, rng);
       if (k2) {
-        lead.parts.push({ key: k2, value: clueValue(k2, facts), text: CLUE_KINDS[k2].text(facts) });
+        var np = { key: k2, value: clueValue(k2, facts), text: CLUE_KINDS[k2].text(facts) };
+        if (k2 === "flag") np.flagSrc = facts.flagSrc;
+        lead.parts.push(np);
         fresh = addBoard(c, ctx, { type: "trail", stopIdx: c.lead, text: "HQ intercept: someone who met the suspect also " + CLUE_KINDS[k2].text(facts) + "." });
       }
     }
@@ -653,7 +665,7 @@
       c.lead = idx + 1;
       c.stuck[idx] = false;
       entries.push(addBoard(c, ctx, { type: "trail", agentId: a.id, stopIdx: idx + 1, text: def.name + " reports from " + place.city + ": " + clueSentence(stop) }));
-    } else if (!isFinal && !lucky && !c.stuck[idx] && !(c.lead != null && c.lead > idx)) {
+    } else if (!isFinal && !c.stuck[idx] && !(c.lead != null && c.lead > idx)) {
       c.stuck[idx] = true; // no trail clue yet: the next orders here are guaranteed to get one
     }
 

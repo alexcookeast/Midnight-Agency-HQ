@@ -18,6 +18,8 @@
  *   stars >= 5  -> Junior Analyst  (level 3, legacyTier 2)
  *   stars >= 2  -> Rookie          (level 2, legacyTier 1)
  *   else        -> Recruit         (level 1, legacyTier 1)
+ *   A rank also needs a floor of solved cases (minSolved 0/1/3/5/8/12/16) so stars alone cannot
+ *   skip the ladder. rank = highest tier where stars >= minStars AND solved >= minSolved.
  *   player.rank in storage is only a cached copy of the derived rank; stars always win.
  *   The numeric level (1..7) tracks full rank progression; legacyRankTier (1..3) maps onto
  *   3-tier rule buckets where needed.
@@ -35,13 +37,13 @@
 
   // Ordered low -> high. minStars is the promotion threshold.
   var RANKS = [
-    { name: 'Recruit',        level: 1, legacyTier: 1, minStars: 0,  codenameUnlocked: false },
-    { name: 'Rookie',         level: 2, legacyTier: 1, minStars: 2,  codenameUnlocked: false },
-    { name: 'Junior Analyst', level: 3, legacyTier: 2, minStars: 5,  codenameUnlocked: true  },
-    { name: 'Operative',      level: 4, legacyTier: 2, minStars: 9,  codenameUnlocked: true  },
-    { name: 'Specialist',     level: 5, legacyTier: 3, minStars: 14, codenameUnlocked: true  },
-    { name: 'Agent',          level: 6, legacyTier: 3, minStars: 20, codenameUnlocked: true  },
-    { name: 'Spymaster',      level: 7, legacyTier: 3, minStars: 27, codenameUnlocked: true  }
+    { name: 'Recruit',        level: 1, legacyTier: 1, minStars: 0, minSolved: 0,  codenameUnlocked: false },
+    { name: 'Rookie',         level: 2, legacyTier: 1, minStars: 2, minSolved: 1,  codenameUnlocked: false },
+    { name: 'Junior Analyst', level: 3, legacyTier: 2, minStars: 5, minSolved: 3,  codenameUnlocked: true  },
+    { name: 'Operative',      level: 4, legacyTier: 2, minStars: 9, minSolved: 5,  codenameUnlocked: true  },
+    { name: 'Specialist',     level: 5, legacyTier: 3, minStars: 14, minSolved: 8, codenameUnlocked: true  },
+    { name: 'Agent',          level: 6, legacyTier: 3, minStars: 20, minSolved: 12, codenameUnlocked: true  },
+    { name: 'Spymaster',      level: 7, legacyTier: 3, minStars: 27, minSolved: 16, codenameUnlocked: true  }
   ];
 
   var RANK_LEVELS = {
@@ -71,6 +73,17 @@
     return found.name;
   }
 
+  // Stars AND solved cases must both clear a tier's floor.
+  function rankFromProgress(stars, solved) {
+    var n = Number(stars); if (!isFinite(n) || n < 0) n = 0;
+    var m = Number(solved); if (!isFinite(m) || m < 0) m = 0;
+    var found = RANKS[0];
+    for (var i = 0; i < RANKS.length; i++) {
+      if (n >= RANKS[i].minStars && m >= RANKS[i].minSolved) found = RANKS[i];
+    }
+    return found.name;
+  }
+
   // Accepts a config object, a rank name, or a star count.
   function rankMeta(input) {
     if (typeof input === 'number') return rankByName(rankFromStars(input));
@@ -94,7 +107,8 @@
   }
 
   function effectiveRank(cfg) {
-    return rankFromStars(cfg && cfg.player && cfg.player.stars);
+    var pl = cfg && cfg.player;
+    return rankFromProgress(pl && pl.stars, pl && pl.solved);
   }
 
   function isPromoted(cfg) {
@@ -105,15 +119,19 @@
     return !!rankMeta(cfgOrRank).codenameUnlocked;
   }
 
-  function nextRankInfo(stars) {
+  // nextRankInfo(stars[, solved]) -> the next tier not yet earned, with what is still missing.
+  function nextRankInfo(stars, solved) {
     var n = Math.max(0, Math.floor(Number(stars) || 0));
+    var m = solved === undefined ? Infinity : Math.max(0, Math.floor(Number(solved) || 0));
     for (var i = 0; i < RANKS.length; i++) {
-      if (n < RANKS[i].minStars) {
+      if (n < RANKS[i].minStars || m < RANKS[i].minSolved) {
         return {
           name: RANKS[i].name,
           level: RANKS[i].level,
           minStars: RANKS[i].minStars,
-          starsRemaining: RANKS[i].minStars - n
+          minSolved: RANKS[i].minSolved,
+          starsRemaining: Math.max(0, RANKS[i].minStars - n),
+          solvedRemaining: m === Infinity ? 0 : Math.max(0, RANKS[i].minSolved - m)
         };
       }
     }
@@ -123,14 +141,17 @@
   function defaultConfig() {
     return {
       gm: { userName: 'GM', passCode: 'MIDNIGHT-GM', clearanceKey: 'MIDNIGHT-GM' },
-      player: { rank: 'Recruit', userName: '', passCode: '', stars: 0, trust: 5 },
+      player: { rank: 'Recruit', userName: '', passCode: '', stars: 0, solved: 0, trust: 5 },
       passcodeToppings: ['pickles', 'olives', 'mushrooms'],
       secretPhrase: 'pickles, olives, and mushrooms',
       gateUrl: GATE_URL,
       npcs: {},
       christmasEnabled: true,
       snowDensity: 45,
-      snowSpeed: 1.0
+      snowSpeed: 1.0,
+      // 'mission' = scaled clock (kid friendly), 'real' = true travel times. GM Suite toggles it.
+      timeMode: 'mission',
+      missionScale: 0.35
     };
   }
 
@@ -167,8 +188,15 @@
     cfg.snowSpeed = clampNumber(cfg.snowSpeed, 0.2, 4.0, base.snowSpeed);
 
     cfg.player.stars = Math.max(0, Math.floor(Number(cfg.player.stars) || 0));
+    if (typeof (p.player && p.player.solved) === 'undefined') {
+      // Grandfather existing saves: assume they solved what their stars imply.
+      cfg.player.solved = rankByName(rankFromStars(cfg.player.stars)).minSolved;
+    }
+    cfg.player.solved = Math.max(0, Math.floor(Number(cfg.player.solved) || 0));
+    cfg.timeMode = cfg.timeMode === 'real' ? 'real' : 'mission';
+    cfg.missionScale = clampNumber(cfg.missionScale, 0.05, 1, 0.35);
     cfg.player.trust = Math.round(clampNumber(cfg.player.trust, 0, 5, 5)); // agency trust, 0-5 dots
-    cfg.player.rank = rankFromStars(cfg.player.stars); // cache always matches stars
+    cfg.player.rank = rankFromProgress(cfg.player.stars, cfg.player.solved); // cache always matches stars
     return cfg;
   }
 
@@ -218,10 +246,34 @@
     return write({ player: { stars: next } });
   }
 
+  // Called once per solved case (WarrantEngine.completeCase).
+  function recordCaseSolved() {
+    var cur = read();
+    return write({ player: { solved: (Number(cur.player.solved) || 0) + 1 } });
+  }
+
+  // Effective travel-time multiplier: 1 in real mode, else the mission scale. ?speed=N still stacks (engines).
+  function timeScale(cfg) {
+    var c = cfg || read();
+    return c.timeMode === 'real' ? 1 : c.missionScale;
+  }
+
   // Agency trust (0-5 dots), same read-then-write rule as stars.
   function addTrust(n) {
     var cur = read();
     return write({ player: { trust: (Number(cur.player.trust) || 0) + (Number(n) || 0) } });
+  }
+
+  // GM helper: write stars AND the solved floor so the derived rank equals the requested one.
+  function gmSetRank(rankName) {
+    var r = rankByName(rankName);
+    var cur = read();
+    var solved = Math.max(Number(cur.player.solved) || 0, r.minSolved);
+    if (rankFromProgress(r.minStars, solved) !== r.name) solved = r.minSolved;
+    var stars = rankFromProgress(cur.player.stars, solved) === r.name ? cur.player.stars : r.minStars;
+    // Demotion: clamp solved down to the tier floor so the target rank is exactly what shows.
+    if (rankLevel(rankFromProgress(stars, solved)) > r.level) solved = r.minSolved;
+    return write({ player: { stars: stars, solved: solved } });
   }
 
   // GM helper: set stars so the derived rank equals the requested one.
@@ -279,6 +331,10 @@
     RANKS: RANKS,
     RANK_LEVELS: RANK_LEVELS,
     rankFromStars: rankFromStars,
+    rankFromProgress: rankFromProgress,
+    recordCaseSolved: recordCaseSolved,
+    gmSetRank: gmSetRank,
+    timeScale: timeScale,
     rankMeta: rankMeta,
     rankLevel: rankLevel,
     legacyRankTier: legacyRankTier,

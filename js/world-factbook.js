@@ -6,13 +6,13 @@
   // Numeric rank levels come from js/ma-config.js (single source of truth).
   // Fallback matches it so standalone test pages that skip that script keep working.
   var RL = (global.MidnightAgencyConfig && global.MidnightAgencyConfig.RANK_LEVELS) ||
-    { ROOKIE: 1, OPERATIVE: 2, FIELD_AGENT: 3 };
+    { RECRUIT: 1, ROOKIE: 2, JUNIOR_ANALYST: 3, OPERATIVE: 4, SPECIALIST: 5, AGENT: 6, SPYMASTER: 7 };
 
   var TRAVEL_MODES = {
     transit: {
       id: "transit",
       label: "Local Bus / Ferry",
-      minRank: RL.ROOKIE,
+      minRank: RL.RECRUIT,
       speedKmh: 45,
       costPerHour: 15,
       requiresHub: false,
@@ -21,7 +21,7 @@
     road: {
       id: "road",
       label: "Car / Road Trip",
-      minRank: RL.ROOKIE,
+      minRank: RL.RECRUIT,
       speedKmh: 75,
       costPerHour: 25,
       requiresHub: false,
@@ -30,7 +30,7 @@
     ferry: {
       id: "ferry",
       label: "Ferry",
-      minRank: RL.ROOKIE,
+      minRank: RL.RECRUIT,
       speedKmh: 35,
       costPerHour: 20,
       requiresHub: false,
@@ -39,7 +39,7 @@
     rail: {
       id: "rail",
       label: "Passenger Train",
-      minRank: RL.ROOKIE,
+      minRank: RL.RECRUIT,
       speedKmh: 115,
       costPerHour: 30,
       requiresHub: false,
@@ -48,7 +48,7 @@
     flight: {
       id: "flight",
       label: "Commercial Flight",
-      minRank: RL.OPERATIVE,
+      minRank: RL.JUNIOR_ANALYST,
       speedKmh: 640,
       costPerHour: 95,
       requiresHub: true,
@@ -57,7 +57,7 @@
     charter: {
       id: "charter",
       label: "Charter / Covert Hop",
-      minRank: RL.FIELD_AGENT,
+      minRank: RL.SPECIALIST,
       speedKmh: 500,
       costPerHour: 175,
       requiresHub: false,
@@ -68,6 +68,9 @@
   var PLACES = [
     {
       id: "winnipeg",
+      lat: 49.9,
+      lon: -97.14,
+      tz: "America/Winnipeg",
       city: "Winnipeg",
       country: "Canada",
       iso2: "CA",
@@ -80,6 +83,9 @@
     },
     {
       id: "thunder-bay",
+      lat: 48.38,
+      lon: -89.25,
+      tz: "America/Toronto",
       city: "Thunder Bay",
       country: "Canada",
       iso2: "CA",
@@ -92,6 +98,9 @@
     },
     {
       id: "toronto",
+      lat: 43.65,
+      lon: -79.38,
+      tz: "America/Toronto",
       city: "Toronto",
       country: "Canada",
       iso2: "CA",
@@ -104,6 +113,9 @@
     },
     {
       id: "new-york",
+      lat: 40.71,
+      lon: -74.01,
+      tz: "America/New_York",
       city: "New York",
       country: "United States",
       iso2: "US",
@@ -116,6 +128,9 @@
     },
     {
       id: "mexico-city",
+      lat: 19.43,
+      lon: -99.13,
+      tz: "America/Mexico_City",
       city: "Mexico City",
       country: "Mexico",
       iso2: "MX",
@@ -128,6 +143,9 @@
     },
     {
       id: "santiago",
+      lat: -33.45,
+      lon: -70.67,
+      tz: "America/Santiago",
       city: "Santiago",
       country: "Chile",
       iso2: "CL",
@@ -140,6 +158,9 @@
     },
     {
       id: "reykjavik",
+      lat: 64.15,
+      lon: -21.94,
+      tz: "Atlantic/Reykjavik",
       city: "Reykjavik",
       country: "Iceland",
       iso2: "IS",
@@ -152,6 +173,9 @@
     },
     {
       id: "dublin",
+      lat: 53.35,
+      lon: -6.26,
+      tz: "Europe/Dublin",
       city: "Dublin",
       country: "Ireland",
       iso2: "IE",
@@ -164,6 +188,9 @@
     },
     {
       id: "london",
+      lat: 51.51,
+      lon: -0.13,
+      tz: "Europe/London",
       city: "London",
       country: "United Kingdom",
       iso2: "GB",
@@ -176,6 +203,9 @@
     },
     {
       id: "oslo",
+      lat: 59.91,
+      lon: 10.75,
+      tz: "Europe/Oslo",
       city: "Oslo",
       country: "Norway",
       iso2: "NO",
@@ -188,6 +218,9 @@
     },
     {
       id: "gothenburg",
+      lat: 57.71,
+      lon: 11.97,
+      tz: "Europe/Stockholm",
       city: "Gothenburg",
       country: "Sweden",
       iso2: "SE",
@@ -200,6 +233,9 @@
     },
     {
       id: "warsaw",
+      lat: 52.23,
+      lon: 21.01,
+      tz: "Europe/Warsaw",
       city: "Warsaw",
       country: "Poland",
       iso2: "PL",
@@ -212,6 +248,9 @@
     },
     {
       id: "dakar",
+      lat: 14.72,
+      lon: -17.47,
+      tz: "Africa/Dakar",
       city: "Dakar",
       country: "Senegal",
       iso2: "SN",
@@ -224,6 +263,9 @@
     },
     {
       id: "lagos",
+      lat: 6.52,
+      lon: 3.38,
+      tz: "Africa/Lagos",
       city: "Lagos",
       country: "Nigeria",
       iso2: "NG",
@@ -236,6 +278,9 @@
     },
     {
       id: "osaka",
+      lat: 34.69,
+      lon: 135.5,
+      tz: "Asia/Tokyo",
       city: "Osaka",
       country: "Japan",
       iso2: "JP",
@@ -248,6 +293,9 @@
     },
     {
       id: "tokyo",
+      lat: 35.68,
+      lon: 139.69,
+      tz: "Asia/Tokyo",
       city: "Tokyo",
       country: "Japan",
       iso2: "JP",
@@ -260,6 +308,9 @@
     },
     {
       id: "mumbai",
+      lat: 19.08,
+      lon: 72.88,
+      tz: "Asia/Kolkata",
       city: "Mumbai",
       country: "India",
       iso2: "IN",
@@ -272,6 +323,9 @@
     },
     {
       id: "beirut",
+      lat: 33.89,
+      lon: 35.5,
+      tz: "Asia/Beirut",
       city: "Beirut",
       country: "Lebanon",
       iso2: "LB",
@@ -285,6 +339,9 @@
     },
     {
       id: "buenos-aires",
+      lat: -34.6,
+      lon: -58.38,
+      tz: "America/Argentina/Buenos_Aires",
       city: "Buenos Aires",
       country: "Argentina",
       iso2: "AR",
@@ -297,6 +354,9 @@
     },
     {
       id: "duluth",
+      lat: 46.79,
+      lon: -92.1,
+      tz: "America/Chicago",
       city: "Duluth",
       country: "United States",
       iso2: "US",
@@ -309,6 +369,9 @@
     },
     {
       id: "anchorage",
+      lat: 61.22,
+      lon: -149.9,
+      tz: "America/Anchorage",
       city: "Anchorage",
       country: "United States",
       iso2: "US",
@@ -431,7 +494,7 @@
     var MAC = global.MidnightAgencyConfig;
     var rank = typeof opts.rank === "string" && MAC && MAC.rankLevel
       ? MAC.rankLevel(opts.rank)
-      : (Number(opts.rank) || RL.ROOKIE);
+      : (Number(opts.rank) || RL.RECRUIT);
     var fromPlace = findPlace(fromQuery);
     var toPlace = findPlace(toQuery);
 
