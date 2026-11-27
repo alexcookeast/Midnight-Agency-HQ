@@ -396,6 +396,9 @@
     $('rank').textContent = rank;
     $('whoH').textContent = codename ? ('Agent ' + codename) : 'Recruit (No codename yet)';
     $('starsChip').textContent = stars + ' star' + (stars === 1 ? '' : 's');
+    var trust = Math.max(0, Math.min(5, Number(cfg.player && cfg.player.trust)));
+    if (isNaN(trust)) trust = 5;
+    $('trustChip').textContent = new Array(trust + 1).join('\u25CF') + new Array(6 - trust).join('\u25CB');
     $('missionSub').textContent = promoted
       ? ('Field operations ready' + (codename ? (' for Agent ' + codename + '.') : '.'))
       : 'Earn 2+ stars to unlock promotion past Rookie and claim a codename.';

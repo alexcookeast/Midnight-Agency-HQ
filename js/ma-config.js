@@ -76,7 +76,7 @@
   function defaultConfig() {
     return {
       gm: { userName: 'GM', passCode: 'MIDNIGHT-GM', clearanceKey: 'MIDNIGHT-GM' },
-      player: { rank: 'Rookie', userName: '', passCode: '', stars: 0 },
+      player: { rank: 'Rookie', userName: '', passCode: '', stars: 0, trust: 5 },
       passcodeToppings: ['pickles', 'olives', 'mushrooms'],
       secretPhrase: 'pickles, olives, and mushrooms',
       gateUrl: GATE_URL,
@@ -120,6 +120,7 @@
     cfg.snowSpeed = clampNumber(cfg.snowSpeed, 0.2, 4.0, base.snowSpeed);
 
     cfg.player.stars = Math.max(0, Math.floor(Number(cfg.player.stars) || 0));
+    cfg.player.trust = Math.round(clampNumber(cfg.player.trust, 0, 5, 5)); // agency trust, 0-5 dots
     cfg.player.rank = rankFromStars(cfg.player.stars); // cache always matches stars
     return cfg;
   }
@@ -168,6 +169,12 @@
     var cur = read();
     var next = Math.max(0, (Number(cur.player.stars) || 0) + (Number(n) || 0));
     return write({ player: { stars: next } });
+  }
+
+  // Agency trust (0-5 dots), same read-then-write rule as stars.
+  function addTrust(n) {
+    var cur = read();
+    return write({ player: { trust: (Number(cur.player.trust) || 0) + (Number(n) || 0) } });
   }
 
   // GM helper: set stars so the derived rank equals the requested one.
@@ -236,6 +243,7 @@
     write: write,
     writePlayer: writePlayer,
     addStars: addStars,
+    addTrust: addTrust,
     markGatePassed: markGatePassed,
     clearGate: clearGate,
     isGatePassed: isGatePassed,
