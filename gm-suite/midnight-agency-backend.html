@@ -79,7 +79,7 @@
       <div class="sub">Restricted GM console · Separate from Player Dashboard</div>
     </div>
     <div class="btns" style="margin-top:0">
-      <a class="btn sec" href="../player-dashboard.html">Player HQ</a>
+      <a class="btn sec" href="../player-dashboard.html">Command Desk</a>
       <a class="btn sec" href="../midnight-agency-passcode.html">Passcode Gate</a>
       <button class="sec" id="lockGmBtn" type="button">Lock GM Session</button>
     </div>
@@ -114,11 +114,14 @@
       <h2>Player Dashboard Rules</h2>
       <div class="sub">First-time players set a 4-digit passCode; codename unlocks after Rookie.</div>
       <label for="playerRank">Player Rank</label>
-      <select id="playerRank">
-        <option value="Rookie">Rookie (No codename yet)</option>
-        <option value="Operative">Operative (Promoted — codename unlocked)</option>
-        <option value="Field Agent">Field Agent (Promoted — codename unlocked)</option>
+      <select id="playerRank"></select>
+      <div class="hint-note" id="rankProgress"></div>
+      <label for="timeMode">Travel time</label>
+      <select id="timeMode">
+        <option value="mission">Mission time (scaled, kid-friendly: 15 min to 6 h)</option>
+        <option value="real">Real time (true flight, rail and road times)</option>
       </select>
+      <div class="hint-note">Real time makes cross-world trips take many hours. Saved with the player rules.</div>
       <label for="playerUserName">Player Codename (userName)</label>
       <input type="text" id="playerUserName" placeholder="Unlocked when promoted past Rookie">
       <div class="hint-note" id="userNameLockNote">Rookies do not have a codename until promoted.</div>
@@ -168,11 +171,11 @@
   }
 
   function syncRankUserNameState() {
-    var isRookie = $('playerRank').value === 'Rookie';
+    var isRookie = !MA.canClaimCodename($('playerRank').value);
     $('playerUserName').disabled = isRookie;
     if (isRookie) {
       $('playerUserName').value = '';
-      $('userNameLockNote').textContent = 'Rookie rank: no codename assigned until promoted.';
+      $('userNameLockNote').textContent = 'Recruit and Rookie ranks: no codename until promoted.';
     } else {
       $('userNameLockNote').textContent = 'Promoted rank: player can set or confirm a codename.';
     }
@@ -180,13 +183,24 @@
 
   function syncInputsFromConfig() {
     var cfg = readConfig();
-    var rank = cfg.player.rank || 'Rookie';
+    var rank = MA.effectiveRank(cfg);
+    var sel = $('playerRank');
+    if (!sel.options.length) {
+      MA.RANKS.forEach(function (r) {
+        var o = document.createElement('option');
+        o.value = r.name;
+        o.textContent = r.name + ' (' + r.minStars + '★, ' + r.minSolved + ' solved' + (r.codenameUnlocked ? ', codename' : '') + ')';
+        sel.appendChild(o);
+      });
+    }
+    $('rankProgress').textContent = 'Now: ' + cfg.player.stars + ' stars, ' + (cfg.player.solved || 0) + ' cases solved. Rank needs both.';
+    $('timeMode').value = cfg.timeMode === 'real' ? 'real' : 'mission';
     $('gmUserName').value = cfg.gm.userName || '';
     $('gmPassCode').value = cfg.gm.passCode || '';
     $('gmKeyCode').value = cfg.gm.clearanceKey || 'MIDNIGHT-GM';
     $('gmClearanceBadge').textContent = cfg.gm.clearanceKey || 'MIDNIGHT-GM';
     $('playerRank').value = rank;
-    $('playerUserName').value = rank === 'Rookie' ? '' : (cfg.player.userName || '');
+    $('playerUserName').value = !MA.canClaimCodename(rank) ? '' : (cfg.player.userName || '');
     $('playerPassCode').value = cfg.player.passCode || '';
     $('xmasEnabled').checked = !!cfg.christmasEnabled;
     $('snowDensity').value = cfg.snowDensity;
@@ -245,12 +259,13 @@
       setStatus('Player passCode must be 4 digits.');
       return;
     }
-    var u = rank === 'Rookie' ? '' : ($('playerUserName').value || '').trim();
+    var u = !MA.canClaimCodename(rank) ? '' : ($('playerUserName').value || '').trim();
     // Keep current stars if they already map to the chosen rank; otherwise snap to that rank's
     // threshold (so the GM can demote too). Thresholds come from the shared module.
-    var stars = MA.starsForGmRank(rank, cur.player && cur.player.stars);
-    writeConfig({ player: { rank: rank, userName: u, passCode: rawCode, stars: stars } });
-    setStatus('Saved player rules for rank <strong>' + rank + '</strong>.');
+    writeConfig({ player: { userName: u, passCode: rawCode }, timeMode: $('timeMode').value });
+    MA.gmSetRank(rank);   // sets stars AND the solved-cases floor so the derived rank matches
+    syncInputsFromConfig();
+    setStatus('Saved player rules: rank <strong>' + rank + '</strong>, ' + ($('timeMode').value === 'real' ? 'real' : 'mission') + ' travel time.');
   };
 
   $('snowDensity').oninput = function () {

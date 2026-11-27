@@ -124,6 +124,63 @@
     return travelMinutes(fromPlace, toPlace) * MIN_MS;
   }
 
+  // ---- geography + multi-leg trips (Wave 3) ----
+  var D2R = Math.PI / 180;
+  function distanceKm(a, b) {
+    var dLat = (b.lat - a.lat) * D2R, dLon = (b.lon - a.lon) * D2R;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(a.lat * D2R) * Math.cos(b.lat * D2R) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+
+  // Great-circle point at fraction t (0..1) between two {lat,lon}.
+  function interpolate(a, b, t) {
+    var f1 = a.lat * D2R, l1 = a.lon * D2R, f2 = b.lat * D2R, l2 = b.lon * D2R;
+    var d = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin((f2 - f1) / 2), 2) + Math.cos(f1) * Math.cos(f2) * Math.pow(Math.sin((l2 - l1) / 2), 2)));
+    if (d < 1e-6) return { lat: a.lat, lon: a.lon };
+    var A = Math.sin((1 - t) * d) / Math.sin(d), B = Math.sin(t * d) / Math.sin(d);
+    var x = A * Math.cos(f1) * Math.cos(l1) + B * Math.cos(f2) * Math.cos(l2);
+    var y = A * Math.cos(f1) * Math.sin(l1) + B * Math.cos(f2) * Math.sin(l2);
+    var z = A * Math.sin(f1) + B * Math.sin(f2);
+    return { lat: Math.atan2(z, Math.sqrt(x * x + y * y)) / D2R, lon: Math.atan2(y, x) / D2R };
+  }
+
+  // Real-world minutes for one leg. Flights: 800 km/h + 90 min airport/connection; rail 160; road 70; +15 boarding.
+  function realLegMinutes(a, b, kind) {
+    var km = distanceKm(a, b);
+    if (kind === "flight") return Math.round(km / 800 * 60 + 90);
+    if (kind === "rail") return Math.round(km * 1.15 / 160 * 60 + 15);
+    return Math.round(km * 1.25 / 70 * 60 + 15);
+  }
+
+  // A trip is a list of legs [{fromId,toId,kind,minutes}]. Mission time keeps the tuned tier minutes
+  // (travelMinutes) and splits them across legs in proportion to the real leg times; real time uses the real numbers.
+  function planTrip(fromPlace, toPlace, timeMode) {
+    var WF = global.WorldFactbook;
+    var legs = [];
+    if (!fromPlace || !toPlace || fromPlace.id === toPlace.id) {
+      return { legs: [], totalMinutes: travelMinutes(fromPlace, toPlace), mode: timeMode === "real" ? "real" : "mission" };
+    }
+    var route = WF && WF.planRoute ? WF.planRoute(fromPlace.id, toPlace.id, { rank: 7 }) : null;
+    var best = route && route.routes && route.routes.length ? route.routes[0] : null;
+    if (best && best.legs.length) {
+      legs = best.legs.map(function (l) {
+        var kind = l.modeId === "flight" || l.modeId === "charter" ? "flight" : (l.modeId === "rail" ? "rail" : "ground");
+        return { fromId: l.fromId, toId: l.toId, kind: kind, modeId: l.modeId };
+      });
+    } else {
+      legs = [{ fromId: fromPlace.id, toId: toPlace.id, kind: fromPlace.landmass === toPlace.landmass ? "ground" : "flight" }];
+    }
+    var realMin = legs.map(function (l) {
+      return realLegMinutes(WF.findPlace(l.fromId), WF.findPlace(l.toId), l.kind);
+    });
+    var realTotal = realMin.reduce(function (x, y) { return x + y; }, 0) || 1;
+    var real = timeMode === "real";
+    var total = real ? realTotal : travelMinutes(fromPlace, toPlace);
+    legs.forEach(function (l, i) { l.minutes = Math.max(1, Math.round(total * realMin[i] / realTotal)); });
+    return { legs: legs, totalMinutes: legs.reduce(function (x, l) { return x + l.minutes; }, 0), mode: real ? "real" : "mission", realMinutes: realTotal };
+  }
+
   // Returns true when the agent leveled up.
   function addXp(agentState, amount) {
     agentState.xp = Math.max(0, (agentState.xp || 0) + (Number(amount) || 0));
@@ -160,6 +217,10 @@
     unlockAgent: unlockAgent,
     travelMinutes: travelMinutes,
     travelMs: travelMs,
+    planTrip: planTrip,
+    distanceKm: distanceKm,
+    interpolate: interpolate,
+    realLegMinutes: realLegMinutes,
     addXp: addXp,
     adjustRapport: adjustRapport,
     luckyBreakChance: luckyBreakChance

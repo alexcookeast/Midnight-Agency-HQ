@@ -5,8 +5,14 @@
     { id: "all", label: "All Field Notes" },
     { id: "ciphers", label: "Ciphers & Secret Codes" },
     { id: "tradecraft", label: "Spy Tradecraft" },
-    { id: "syndicates", label: "Syndicate Intelligence" }
+    { id: "syndicates", label: "Syndicate Intelligence" },
+    { id: "countries", label: "Countries & Regions" }
   ];
+
+  // Country entries are registered from data/factbook-index.json (registerCountryIndex) so the map can
+  // open a country by iso2. They live apart from ENTRIES so "all" stays the spycraft field notes.
+  var COUNTRY_ENTRIES = [];
+  var COUNTRY_BY_ISO2 = {};
 
   var ENTRIES = [
     {
@@ -250,13 +256,39 @@
   }
 
   function getEntries(categoryId) {
+    if (categoryId === "countries") return COUNTRY_ENTRIES.slice();
     if (!categoryId || categoryId === "all") return ENTRIES.slice();
     return ENTRIES.filter(function (item) {
       return item.category === categoryId;
     });
   }
 
+  // index: factbook-index.json ({countries:{AF:{...}}} or array of [iso2, record] / records)
+  function registerCountryIndex(index) {
+    var list = index && index.countries ? index.countries : index;
+    var rows = Array.isArray(list) ? list : Object.keys(list || {}).map(function (k) { return [k, list[k]]; });
+    COUNTRY_ENTRIES.length = 0; COUNTRY_BY_ISO2 = {};
+    rows.forEach(function (row) {
+      var rec = Array.isArray(row) ? row[1] : row;
+      if (!rec || !rec.iso2) return;
+      var entry = {
+        id: "country-" + rec.iso2.toLowerCase(), category: "countries", iso2: rec.iso2, title: rec.name,
+        summary: [rec.subregion || rec.region, rec.capital && rec.capital.name ? "Capital: " + rec.capital.name : ""].filter(Boolean).join(" · "),
+        region: rec.region, subregion: rec.subregion, flagPath: rec.flagPath, dataUrl: "data/countries/" + rec.iso2.toLowerCase() + ".json",
+        tags: rec.clueTags || []
+      };
+      COUNTRY_ENTRIES.push(entry); COUNTRY_BY_ISO2[rec.iso2.toUpperCase()] = entry;
+    });
+    COUNTRY_ENTRIES.sort(function (a, b) { return a.title < b.title ? -1 : 1; });
+    return COUNTRY_ENTRIES.length;
+  }
+
+  function findCountry(iso2) {
+    return COUNTRY_BY_ISO2[String(iso2 || "").toUpperCase()] || null;
+  }
+
   function findEntry(id) {
+    if (String(id).indexOf("country-") === 0) return findCountry(String(id).slice(8));
     for (var i = 0; i < ENTRIES.length; i += 1) {
       if (ENTRIES[i].id === id) return ENTRIES[i];
     }
@@ -316,6 +348,9 @@
     findEntry: findEntry,
     searchEntries: searchEntries,
     registerEntry: registerEntry,
-    registerEntries: registerEntries
+    registerEntries: registerEntries,
+    registerCountryIndex: registerCountryIndex,
+    findCountry: findCountry,
+    getCountries: function () { return COUNTRY_ENTRIES.slice(); }
   };
 })(typeof window !== "undefined" ? window : globalThis);

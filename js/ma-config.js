@@ -149,9 +149,9 @@
       christmasEnabled: true,
       snowDensity: 45,
       snowSpeed: 1.0,
-      // 'mission' = scaled clock (kid friendly), 'real' = true travel times. GM Suite toggles it.
-      timeMode: 'mission',
-      missionScale: 0.35
+      // 'mission' = tuned, kid-friendly travel clock (15 min - 6 h); 'real' = true flight/rail/road times
+      // (GM Suite toggle). ?speed=N still divides whichever is active, for testing.
+      timeMode: 'mission'
     };
   }
 
@@ -194,7 +194,6 @@
     }
     cfg.player.solved = Math.max(0, Math.floor(Number(cfg.player.solved) || 0));
     cfg.timeMode = cfg.timeMode === 'real' ? 'real' : 'mission';
-    cfg.missionScale = clampNumber(cfg.missionScale, 0.05, 1, 0.35);
     cfg.player.trust = Math.round(clampNumber(cfg.player.trust, 0, 5, 5)); // agency trust, 0-5 dots
     cfg.player.rank = rankFromProgress(cfg.player.stars, cfg.player.solved); // cache always matches stars
     return cfg;
@@ -252,11 +251,8 @@
     return write({ player: { solved: (Number(cur.player.solved) || 0) + 1 } });
   }
 
-  // Effective travel-time multiplier: 1 in real mode, else the mission scale. ?speed=N still stacks (engines).
-  function timeScale(cfg) {
-    var c = cfg || read();
-    return c.timeMode === 'real' ? 1 : c.missionScale;
-  }
+  // 'mission' | 'real'
+  function timeMode(cfg) { return (cfg || read()).timeMode === 'real' ? 'real' : 'mission'; }
 
   // Agency trust (0-5 dots), same read-then-write rule as stars.
   function addTrust(n) {
@@ -334,7 +330,7 @@
     rankFromProgress: rankFromProgress,
     recordCaseSolved: recordCaseSolved,
     gmSetRank: gmSetRank,
-    timeScale: timeScale,
+    timeMode: timeMode,
     rankMeta: rankMeta,
     rankLevel: rankLevel,
     legacyRankTier: legacyRankTier,

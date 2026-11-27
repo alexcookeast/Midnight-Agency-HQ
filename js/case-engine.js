@@ -291,7 +291,8 @@
       agents: global.AgentRoster.dealStarterCrew(global.WorldFactbook.PLACES, rng, 3),
       rings: {},
       stats: { solved: 0, falseArrests: 0 },
-      passport: []
+      passport: [],
+      pings: []
     };
   }
 
@@ -313,6 +314,11 @@
 
   function reset() {
     try { global.localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  }
+
+  // Cities the player has reason to care about on the map: the scene plus every stop reached so far.
+  function currentRouteIds(c) {
+    return c.route.filter(function (id, i) { return i === 0 || i <= c.progress || c.visited[id]; });
   }
 
   function activeCases(state) {
@@ -435,6 +441,7 @@
     });
 
     state.cases.push(c);
+    addPing(state, { kind: "case", placeId: c.route[0], caseId: c.id, at: ctx.now });
     return c;
   }
 
@@ -460,17 +467,29 @@
     }
 
     var from = placeById(a.stationPlaceId);
-    var ms = global.AgentRoster.travelMs(from, to) / Math.max(1, Number(ctx.timeScale) || 1);
+    // multi-leg trip: dev speed (?speed=N) divides travel time; ctx.timeMode 'real' uses true travel times
+    var speed = Math.max(1, Number(ctx.travelScale || ctx.timeScale) || 1);
+    var trip = global.AgentRoster.planTrip(from, to, ctx.timeMode);
+    var t = ctx.now, legs = [];
+    trip.legs.forEach(function (l) {
+      var dur = Math.max(500, Math.round(l.minutes * 60000 / speed));
+      legs.push({ fromPlaceId: l.fromId, toPlaceId: l.toId, kind: l.kind, modeId: l.modeId, departureTime: t, arrivalTime: t + dur });
+      t += dur;
+    });
+    var ms = Math.max(1000, t - ctx.now);
+    if (!legs.length) { ms = Math.max(1000, Math.round(global.AgentRoster.travelMs(from, to) / speed)); }
     a.status = "traveling";
     a.assignment = {
       caseId: c.id,
       fromPlaceId: from.id,
       toPlaceId: to.id,
       departureTime: ctx.now,
-      arrivalTime: ctx.now + Math.max(1000, Math.round(ms)),
-      arrived: false
+      arrivalTime: ctx.now + ms,
+      arrived: false,
+      legs: legs,
+      timeMode: trip.mode
     };
-    return { ok: true, arrivalTime: a.assignment.arrivalTime, minutes: Math.round(ms / 60000) };
+    return { ok: true, arrivalTime: a.assignment.arrivalTime, minutes: Math.round(ms / 60000), legs: legs, timeMode: trip.mode };
   }
 
   function releasePing(c, agentId, ctx) {
@@ -568,10 +587,52 @@
     c.visited[place.id] = true;
     if (c.holdSince == null) c.holdSince = asg.arrivalTime;
     if (c.pings.indexOf(a.id) === -1) c.pings.push(a.id);
+    addPing(state, { kind: "arrived", placeId: place.id, caseId: c.id, agentId: a.id, at: asg.arrivalTime });
     events.push({
       type: "arrived", caseId: c.id, agentId: a.id, placeId: place.id,
       text: def.name + " has arrived in " + place.city + " and is waiting for orders. The case clock is on hold."
     });
+  }
+
+  // ------------------------------------------------------------------ live map data
+
+  // Where every agent is right now: stationed at a city, or somewhere along the current leg.
+  function agentPositions(state, now) {
+    var WF = global.WorldFactbook, AR = global.AgentRoster;
+    return Object.keys(state.agents).map(function (id) {
+      var a = state.agents[id];
+      var def = AR.byId(id) || {};
+      var base = { id: id, name: def.name || id, badge: def.badge || "", status: a.status };
+      var home = WF.findPlace(a.stationPlaceId);
+      var asg = a.assignment;
+      if (a.status === "traveling" && asg && asg.legs && asg.legs.length) {
+        for (var i = 0; i < asg.legs.length; i += 1) {
+          var l = asg.legs[i];
+          if (now <= l.arrivalTime || i === asg.legs.length - 1) {
+            var fp = WF.findPlace(l.fromPlaceId), tp = WF.findPlace(l.toPlaceId);
+            var span = Math.max(1, l.arrivalTime - l.departureTime);
+            var f = Math.max(0, Math.min(1, (now - l.departureTime) / span));
+            var pos = AR.interpolate(fp, tp, f), ahead = AR.interpolate(fp, tp, Math.min(1, f + 0.02));
+            base.lat = pos.lat; base.lon = pos.lon; base.fromPlaceId = fp.id; base.toPlaceId = tp.id; base.kind = l.kind;
+            base.heading = { lat: ahead.lat, lon: ahead.lon };
+            base.legIndex = i; base.legCount = asg.legs.length;
+            base.etaAt = asg.arrivalTime; base.etaMs = Math.max(0, asg.arrivalTime - now);
+            base.finalPlaceId = asg.toPlaceId; base.caseId = asg.caseId;
+            return base;
+          }
+        }
+      }
+      base.lat = home ? home.lat : 0; base.lon = home ? home.lon : 0; base.placeId = home && home.id;
+      if (asg && asg.caseId) base.caseId = asg.caseId;
+      return base;
+    });
+  }
+
+  // Short-lived events for the map (pulsing pings). Kept in state so a reload still shows recent ones.
+  function addPing(state, ping) {
+    state.pings = state.pings || [];
+    state.pings.push(Object.assign({ id: "p" + Date.now().toString(36) + state.pings.length, at: Date.now() }, ping));
+    if (state.pings.length > 30) state.pings.splice(0, state.pings.length - 30);
   }
 
   // Bring everything up to ctx.now, in time order. Returns events for toasts / HQ voice.
@@ -718,11 +779,14 @@
     reset: reset,
     getCase: getCase,
     activeCases: activeCases,
+    currentRouteIds: currentRouteIds,
     syncRoster: syncRoster,
     createCase: createCase,
     dispatchAgent: dispatchAgent,
     giveOrders: giveOrders,
     tick: tick,
+    agentPositions: agentPositions,
+    addPing: addPing,
     toggleRuledOut: toggleRuledOut,
     currentCandidates: currentCandidates,
     uncoverTrait: uncoverTrait,
