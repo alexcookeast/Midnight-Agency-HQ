@@ -1,0 +1,507 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Midnight Agency — Case Desk</title>
+<script src="./js/ma-config.js"></script>
+<style>
+  :root {
+    --bg: #14102B; --card: #221A45; --card2: #2D2359; --line: #3B2F70;
+    --ink: #F6F2FF; --mute: #B9B0DD; --pink: #FF5FA2; --gold: #FFD76B; --mint: #6FE3B0; --red: #FF7A8A;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); overflow: hidden;
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .app { height: 100%; display: grid; grid-template-rows: 60px 1fr; }
+
+  /* ---------- top bar */
+  .bar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #1B1538; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .btn { min-height: 44px; min-width: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-weight: 800; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; text-decoration: none; color: var(--ink); }
+  .btn.pink { background: var(--pink); color: #14102B; border-color: var(--pink); }
+  .btn.gold { background: var(--gold); color: #14102B; border-color: var(--gold); }
+  .btn.mint { background: var(--mint); color: #0F2B22; border-color: var(--mint); }
+  .btn[disabled] { opacity: .4; cursor: default; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; min-height: 44px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); font-weight: 800; font-size: 13px; white-space: nowrap; color: var(--gold); }
+  .tabs { display: flex; gap: 6px; flex: 1; min-width: 0; }
+  .casetab { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); font-weight: 800; font-size: 13px; max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .casetab.on { background: var(--card2); border-color: var(--pink); color: var(--pink); }
+  .spacer { flex: 1; }
+
+  /* ---------- main */
+  .main { display: grid; grid-template-columns: 6fr 4fr; gap: 12px; padding: 12px; min-height: 0; }
+  .col { min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+  .scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
+  h2 { margin: 0 0 6px; font-size: 17px; }
+  .mute { color: var(--mute); font-size: 13px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .pace { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pill { padding: 6px 12px; border-radius: 999px; font-weight: 800; font-size: 13px; background: var(--card2); }
+  .pill.hold { background: #17402F; color: var(--mint); }
+  .pill.warn { background: #4A2230; color: var(--red); }
+
+  .feed { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .entry { border-radius: 14px; padding: 10px 12px; background: var(--card); border-left: 5px solid var(--line); font-size: 15px; line-height: 1.35; }
+  .entry .meta { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--mute); margin-bottom: 3px; }
+  .entry.brief { border-left-color: var(--pink); }
+  .entry.trail { border-left-color: #7FB2FF; }
+  .entry.suspect { border-left-color: var(--mint); }
+  .entry.scene { border-left-color: #9A8FD0; }
+  .entry.hq { border-left-color: var(--gold); }
+  .entry.deadend { border-left-color: var(--red); }
+  .entry.located { border-left-color: var(--gold); background: #3A2F18; }
+  .entry.lucky { border: 2px solid var(--gold); background: linear-gradient(120deg, #4A3A12, #2D2359); font-weight: 800; }
+
+  .seg { display: flex; gap: 6px; }
+  .seg button { flex: 1; min-height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); font-weight: 800; }
+  .seg button.on { background: var(--card2); border-color: var(--pink); color: var(--pink); }
+
+  /* country board */
+  .cand { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); margin-bottom: 8px; }
+  .cand.out { opacity: .38; }
+  .cand .nm { font-size: 17px; font-weight: 800; }
+  .cand .acts { display: flex; gap: 6px; }
+  .cand .btn { min-height: 44px; padding: 0 12px; }
+  .facts { grid-column: 1 / -1; background: var(--card2); border-radius: 10px; padding: 8px 10px; font-size: 14px; line-height: 1.5; }
+  .facts b { color: var(--gold); }
+  .flagimg { display: block; height: 52px; width: auto; max-width: 100%; margin-top: 6px; border-radius: 6px; border: 2px solid var(--line); background: #fff; }
+
+  /* agents */
+  .agent { display: grid; grid-template-columns: 52px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); margin-bottom: 8px; }
+  .agent .badge { font-size: 34px; text-align: center; }
+  .agent.locked { opacity: .5; }
+  .bar2 { height: 6px; border-radius: 3px; background: var(--card2); overflow: hidden; margin-top: 4px; }
+  .bar2 i { display: block; height: 100%; background: var(--mint); }
+  .hearts { letter-spacing: 2px; color: var(--pink); }
+
+  /* warrant */
+  .traits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px; }
+  .trait { padding: 6px 10px; border-radius: 10px; background: var(--card2); font-size: 13px; }
+  .trait.known { background: #17402F; color: var(--mint); font-weight: 800; }
+  .sus { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 14px; border: 2px solid var(--line); background: var(--card); margin-bottom: 8px; width: 100%; text-align: left; }
+  .sus.sel { border-color: var(--gold); background: #3A2F18; }
+  .sus .tiny { font-size: 12px; color: var(--mute); }
+
+  /* overlays */
+  .veil { position: fixed; inset: 0; background: rgba(8, 6, 20, .78); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
+  .sheet { background: var(--card); border: 2px solid var(--pink); border-radius: 22px; padding: 18px 20px; width: min(640px, 100%); max-height: 92vh; overflow-y: auto; }
+  .sheet h1 { margin: 0 0 6px; font-size: 24px; }
+  .focusbtn { display: block; width: 100%; text-align: left; min-height: 64px; margin-top: 8px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--card2); }
+  .focusbtn b { font-size: 17px; }
+  .focusbtn.fav { border-color: var(--gold); }
+  .toast { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); background: var(--card2); border: 1px solid var(--gold); padding: 10px 16px; border-radius: 14px; font-weight: 800; z-index: 30; max-width: 90vw; }
+  .big { font-size: 46px; font-weight: 900; color: var(--gold); line-height: 1; }
+  .empty { text-align: center; padding: 40px 12px; }
+  .stamp { display: inline-block; border: 3px double var(--pink); color: var(--pink); border-radius: 12px; padding: 6px 10px; margin: 4px; font-weight: 900; transform: rotate(-3deg); }
+
+  @media (max-width: 900px) { .main { grid-template-columns: 1fr; overflow-y: auto; } body { overflow: auto; } }
+  @media (prefers-reduced-motion: no-preference) { .entry.lucky { animation: pop .5s ease-out; } @keyframes pop { from { transform: scale(.96); } to { transform: scale(1); } } }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar" id="bar"></div>
+  <div class="main" id="main"><div class="empty mute" id="loading">Loading the case files…</div></div>
+</div>
+<div id="layer"></div>
+
+<script src="./js/world-factbook.js"></script>
+<script src="./js/crime-generator.js"></script>
+<script src="./js/suspect-generator.js"></script>
+<script src="./js/agent-roster.js"></script>
+<script src="./js/case-engine.js"></script>
+<script src="./js/warrant-engine.js"></script>
+<script>
+(function () {
+  "use strict";
+  var MA = window.MidnightAgencyConfig, CE = window.CaseEngine, WE = window.WarrantEngine, AR = window.AgentRoster, WF = window.WorldFactbook;
+  if (!MA.requireGate()) return;
+
+  var query = new URLSearchParams(location.search);
+  var TIME_SCALE = Math.max(1, Number(query.get("speed")) || 1);
+
+  var roster = null, countries = {}, state = null;
+  var view = { caseId: null, tab: "board", focusFor: null, selected: null, facts: {}, dismissed: {} };
+  var soundOn = readSound();
+
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      if (k === "class") n.className = attrs[k];
+      else if (k === "on") Object.keys(attrs.on).forEach(function (e) { n.addEventListener(e, attrs.on[e]); });
+      else if (k === "disabled") { if (attrs[k]) n.setAttribute("disabled", ""); }
+      else n.setAttribute(k, attrs[k]);
+    });
+    (function add(list) {
+      [].concat(list == null ? [] : list).forEach(function (c) {
+        if (c == null || c === false) return;
+        if (Array.isArray(c)) { add(c); return; }
+        n.appendChild(typeof c === "string" || typeof c === "number" ? document.createTextNode(String(c)) : c);
+      });
+    })(kids);
+    return n;
+  }
+  function place(id) { return WF.findPlace(id); }
+  function cityName(id) { var p = place(id); return p ? p.city : id; }
+  function ctx() {
+    return { now: Date.now(), rng: Math.random, rankLevel: MA.rankLevel(MA.read()), roster: roster, timeScale: TIME_SCALE, facts: function (p) { return countries[p.iso2] || null; } };
+  }
+  function readSound() { try { return localStorage.getItem("ma_desk_sound") !== "off"; } catch (e) { return true; } }
+  function writeSound(v) { try { localStorage.setItem("ma_desk_sound", v ? "on" : "off"); } catch (e) {} }
+  function save() { CE.save(state); }
+  function curCase() { return state && CE.getCase(state, view.caseId); }
+  function mmss(ms) {
+    var s = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+    return h ? h + "h " + m + "m" : m + "m " + ("0" + (s % 60)).slice(-2) + "s";
+  }
+
+  function speak(agentId, text) {
+    if (!soundOn || !window.speechSynthesis) return;
+    try {
+      var def = AR.byId(agentId) || { voice: { pitch: 1, rate: 1 } };
+      var u = new SpeechSynthesisUtterance(text);
+      u.pitch = def.voice.pitch; u.rate = def.voice.rate; u.lang = "en-US";
+      window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  var toastTimer = null;
+  function toast(text) {
+    var old = document.getElementById("toast"); if (old) old.remove();
+    var t = el("div", { class: "toast", id: "toast", role: "status" }, text);
+    document.body.appendChild(t);
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.remove(); }, 4200);
+  }
+
+  function getJSON(url) { return fetch(url).then(function (r) { if (!r.ok) throw new Error(url); return r.json(); }); }
+  function load() {
+    var isos = {}; WF.PLACES.forEach(function (p) { isos[p.iso2] = true; });
+    return Promise.all([
+      getJSON("data/suspects.json"), getJSON("data/crime-rings.json"),
+      Promise.all(Object.keys(isos).map(function (iso) {
+        return getJSON("data/countries/" + iso.toLowerCase() + ".json").then(function (c) { countries[iso] = CE.factsFromCountry(c, { iso2: iso }); }).catch(function () {});
+      }))
+    ]).then(function (r) {
+      roster = Object.assign({}, r[0], { crimeRings: Object.assign({}, r[0].crimeRings, r[1].crimeRings) });
+    });
+  }
+
+  function runTick(quiet) {
+    if (!state) return;
+    var evs = CE.tick(state, ctx());
+    if (evs.length) {
+      save();
+      evs.forEach(function (e) {
+        if (e.type === "arrived") { var a = AR.byId(e.agentId); speak(e.agentId, a.name.split(" ")[0] + " here. I'm in " + cityName(e.placeId) + ". Where should I look?"); }
+        if (!quiet) toast(e.text);
+      });
+      render();
+    }
+  }
+  function newCase() {
+    var c = ctx();
+    if (CE.activeCases(state).length >= CE.RULES.maxActiveCases) { toast("Three open cases is plenty. Solve one first!"); return; }
+    var created = CE.createCase(state, c, {});
+    view.caseId = created.id; view.tab = "board"; view.selected = null;
+    save(); render();
+  }
+  function send(caseId, placeId) {
+    var c = CE.getCase(state, caseId);
+    var idle = Object.keys(state.agents).map(function (k) { return state.agents[k]; }).filter(function (a) { return a.status !== "traveling"; });
+    if (!idle.length) { toast("All your agents are busy travelling."); return; }
+    var target = place(placeId);
+    idle.sort(function (a, b) { return AR.travelMs(place(a.stationPlaceId), target) - AR.travelMs(place(b.stationPlaceId), target); });
+    chooseAgent(idle, target, function (agent) {
+      var r = CE.dispatchAgent(state, ctx(), { caseId: c.id, agentId: agent.id, toPlaceId: placeId });
+      if (!r.ok) { toast("Could not send " + AR.byId(agent.id).name + "."); return; }
+      save(); closeLayer(); toast(AR.byId(agent.id).name.split(" ")[0] + " is heading to " + target.city + " (about " + r.minutes + " min).");
+      render();
+    });
+  }
+  function orders(caseId, agentId, focus) {
+    var r = CE.giveOrders(state, ctx(), { caseId: caseId, agentId: agentId, focus: focus });
+    if (!r.ok) { toast("That agent is not waiting for orders."); return; }
+    save(); closeLayer();
+    var lucky = r.entries.filter(function (e) { return e.type === "lucky"; })[0];
+    if (lucky) { speak(agentId, lucky.text.replace("LUCKY BREAK!", "Lucky break!")); toast("LUCKY BREAK from " + AR.byId(agentId).name + "!"); }
+    render();
+  }
+  function arrest(caseId, agentId) {
+    var r = WE.attemptBust(state, ctx(), { caseId: caseId, agentId: agentId });
+    save();
+    if (r.outcome === "clean") { showSummary(CE.getCase(state, caseId)); }
+    else { toast(r.text || "Nothing happened."); }
+    render();
+  }
+
+  function closeLayer() { document.getElementById("layer").innerHTML = ""; }
+  function openLayer(sheet) {
+    var v = el("div", { class: "veil", on: { click: function (e) { if (e.target === v) closeLayer(); } } }, sheet);
+    var l = document.getElementById("layer"); l.innerHTML = ""; l.appendChild(v);
+  }
+  function chooseAgent(list, target, done) {
+    openLayer(el("div", { class: "sheet" }, [
+      el("h1", null, "Who should go to " + target.city + "?"),
+      list.map(function (a) {
+        var d = AR.byId(a.id), mins = Math.round(AR.travelMs(place(a.stationPlaceId), target) / 60000);
+        return el("button", { class: "focusbtn", on: { click: function () { done(a); } } }, [
+          el("b", null, d.badge + " " + d.name), el("div", { class: "mute" }, "in " + cityName(a.stationPlaceId) + " · about " + mins + " min away")
+        ]);
+      }),
+      el("button", { class: "btn", style: "margin-top:12px", on: { click: closeLayer } }, "Cancel")
+    ]));
+  }
+  function focusSheet(c, a) {
+    var d = AR.byId(a.id);
+    openLayer(el("div", { class: "sheet" }, [
+      el("h1", null, d.badge + " " + d.name + " is in " + cityName(a.stationPlaceId)),
+      el("div", { class: "mute" }, "Waiting for your orders. The case clock is paused. Where should they look?"),
+      Object.keys(AR.FOCUS).map(function (k) {
+        var f = AR.FOCUS[k];
+        return el("button", { class: "focusbtn" + (d.specialty === k ? " fav" : ""), on: { click: function () { orders(c.id, a.id, k); } } }, [
+          el("b", null, f.label + (d.specialty === k ? "  ★ her specialty" : "")), el("div", { class: "mute" }, f.hint)
+        ]);
+      }),
+      el("button", { class: "btn", style: "margin-top:12px", on: { click: function () { view.dismissed[a.id] = Date.now(); closeLayer(); } } }, "Not yet")
+    ]));
+  }
+  function showSummary(c) {
+    var s = c.summary; if (!s) return;
+    openLayer(el("div", { class: "sheet" }, [
+      el("div", { class: "big" }, "★ " + s.totalStars),
+      el("h1", null, s.headline),
+      el("div", { class: "mute" }, s.suspect.name + (s.suspect.rankTitle ? " (" + s.suspect.rankTitle + ")" : "") + " is caught! Stolen: " + s.stolenGood + "."),
+      el("h2", { style: "margin-top:14px" }, "Stars"),
+      s.stars.map(function (x) { return el("div", null, "★ " + x.stars + "  " + x.label); }),
+      s.rankBefore !== s.rankAfter ? el("div", { class: "pill hold", style: "display:inline-block;margin-top:8px" }, "Promoted: " + s.rankBefore + " → " + s.rankAfter + "!") : null,
+      el("h2", { style: "margin-top:14px" }, "The trail"),
+      el("div", null, s.route.map(function (r) { return r.city + " (" + r.country + ")"; }).join("  →  ")),
+      s.newStamps.length ? el("div", { style: "margin-top:8px" }, s.newStamps.map(function (st) { return el("span", { class: "stamp" }, st.city + " " + st.iso2); })) : null,
+      el("h2", { style: "margin-top:14px" }, "Your agents"),
+      s.agents.filter(Boolean).map(function (a) { var d = AR.byId(a.id); return el("div", null, d.badge + " " + d.name + ": +" + a.xp + " XP" + (a.leveledUp ? "  LEVEL UP!" : "")); }),
+      s.unlockedAgents.length ? el("div", { class: "pill hold", style: "display:inline-block;margin-top:8px" }, "New agent joins: " + s.unlockedAgents.map(function (id) { return AR.byId(id).name; }).join(", ")) : null,
+      s.ring && s.ring.leaderExposed && s.newLeaderCaseId ? el("div", { class: "pill warn", style: "display:block;margin-top:10px" }, "BIG NEWS: the ring leader has been exposed! A new high-stakes case is open.") : null,
+      s.ring && s.ring.leaderCaught ? el("div", { class: "pill hold", style: "display:block;margin-top:10px" }, "The ring leader is behind bars!") : null,
+      el("button", { class: "btn pink", style: "margin-top:16px;width:100%", on: { click: function () { closeLayer(); view.caseId = (CE.activeCases(state)[0] || {}).id || null; render(); } } }, "Back to the desk")
+    ]));
+  }
+  function passport() {
+    openLayer(el("div", { class: "sheet" }, [
+      el("h1", null, "Passport"),
+      state.passport.length ? state.passport.map(function (st) { return el("span", { class: "stamp" }, st.city + ", " + st.country); }) : el("div", { class: "mute" }, "No stamps yet. Solve a case to collect your first one."),
+      el("button", { class: "btn", style: "margin-top:14px", on: { click: closeLayer } }, "Close")
+    ]));
+  }
+
+  function render() {
+    renderBar();
+    var main = document.getElementById("main"); main.innerHTML = "";
+    var active = CE.activeCases(state);
+    if (!curCase() || curCase().status === "solved") view.caseId = active.length ? active[0].id : null;
+    var c = curCase();
+    if (!c) {
+      main.style.gridTemplateColumns = "1fr";
+      main.appendChild(el("div", { class: "empty" }, [
+        el("div", { class: "big" }, "🕵️"), el("h2", { style: "font-size:24px" }, "No open cases"),
+        el("div", { class: "mute", style: "margin-bottom:14px" }, "Something sneaky is always going on somewhere. Ready?"),
+        el("button", { class: "btn pink", on: { click: newCase } }, "Take a new case")
+      ]));
+      return;
+    }
+    main.style.gridTemplateColumns = "";
+    main.appendChild(renderLeft(c));
+    main.appendChild(renderRight(c));
+    var waiting = c.pings.map(function (id) { return state.agents[id]; }).filter(function (a) { return a && a.status === "onScene" && !view.dismissed[a.id]; })[0];
+    if (waiting && !document.querySelector(".veil")) focusSheet(c, waiting);
+  }
+  function renderBar() {
+    var p = MA.read().player, trust = Math.max(0, Math.min(5, Number(p.trust)));
+    var tabs = el("div", { class: "tabs" }, CE.activeCases(state).map(function (c) {
+      return el("button", { class: "casetab" + (c.id === view.caseId ? " on" : ""), on: { click: function () { view.caseId = c.id; view.selected = null; render(); } } }, "#" + c.number + " " + c.title);
+    }));
+    var bar = document.getElementById("bar"); bar.innerHTML = "";
+    [
+      el("a", { class: "btn", href: "./player-dashboard.html" + (query.get("dev") ? "?dev=1" : ""), "aria-label": "Back to HQ" }, "← HQ"),
+      el("span", { class: "chip" }, p.rank + " · " + p.stars + " ★"),
+      el("span", { class: "chip", title: "Agency trust" }, "trust " + new Array(trust + 1).join("●") + new Array(6 - trust).join("○")),
+      tabs,
+      el("button", { class: "btn gold", on: { click: newCase } }, "+ Case"),
+      el("button", { class: "btn", on: { click: passport } }, "Passport " + state.passport.length),
+      el("button", { class: "btn", "aria-label": "Sound", on: { click: function () { soundOn = !soundOn; writeSound(soundOn); if (!soundOn && window.speechSynthesis) window.speechSynthesis.cancel(); renderBar(); } } }, soundOn ? "🔊" : "🔇")
+    ].forEach(function (n) { bar.appendChild(n); });
+  }
+
+  function paceChip(c) {
+    if (c.holdSince != null) return el("span", { class: "pill hold", "data-pace": c.id }, "Clock paused · agent waiting for orders");
+    var cr = c.crime;
+    if (c.status === "cold") return el("span", { class: "pill" }, "Trail quiet · no rush, still solvable");
+    var ms = cr.remainingMs - Math.max(0, Date.now() - c.lastTickAt) * TIME_SCALE;
+    return el("span", { class: "pill" + (ms < 3 * 3600000 ? " warn" : ""), "data-pace": c.id }, "Suspect moves on in " + mmss(ms));
+  }
+  function renderLeft(c) {
+    var feed = el("div", { class: "feed" }, c.board.slice().reverse().map(function (b) {
+      var a = b.agentId ? AR.byId(b.agentId) : null;
+      var label = { brief: "Case file", scene: "Scene report", trail: "Trail clue", suspect: "Suspect clue", hq: "HQ", deadend: "Dead end", located: "Suspect located", lucky: "Lucky break" }[b.type] || "Report";
+      var stop = b.type === "trail" && b.stopIdx != null ? c.stops[b.stopIdx] : null;
+      var flags = stop ? stop.parts.filter(function (x) { return x.flagSrc; }) : [];
+      return el("div", { class: "entry " + b.type }, [el("div", { class: "meta" }, (a ? a.badge + " " + a.name + " · " : "") + label), b.text,
+        flags.map(function (x) { return el("img", { class: "flagimg", src: x.flagSrc, alt: "A flag from the clue" }); })]);
+    }));
+    return el("div", { class: "col" }, [
+      el("div", { class: "card" }, [
+        el("h2", null, (c.isLeaderCase ? "★ BIG CASE · " : "") + c.title),
+        el("div", { class: "pace" }, [paceChip(c), c.extensions ? el("span", { class: "pill" }, "Trail extended " + c.extensions + "×") : null])
+      ]),
+      el("div", { class: "scroll", style: "flex:1" }, feed)
+    ]);
+  }
+
+  function renderRight(c) {
+    var tabs = el("div", { class: "seg" }, [["board", "Country board"], ["agents", "Agents"], ["warrant", "Warrant"]].map(function (t) {
+      return el("button", { class: view.tab === t[0] ? "on" : "", on: { click: function () { view.tab = t[0]; render(); } } }, t[1]);
+    }));
+    var body = view.tab === "agents" ? renderAgents(c) : view.tab === "warrant" ? renderWarrant(c) : renderBoard(c);
+    return el("div", { class: "col" }, [tabs, el("div", { class: "scroll", style: "flex:1" }, body)]);
+  }
+
+  function renderBoard(c) {
+    var out = [];
+    var cand = CE.currentCandidates(c);
+    var atScene = c.progress < 0;
+    if (atScene) {
+      var sp = place(c.route[0]);
+      out.push(el("div", { class: "cand" }, [
+        el("div", null, [el("div", { class: "nm" }, "Crime scene: " + sp.city + ", " + sp.country), el("div", { class: "mute" }, "Start here. Send an agent to look around.")]),
+        el("div", { class: "acts" }, [el("button", { class: "btn pink", on: { click: function () { send(c.id, sp.id); } } }, "Send")])
+      ]));
+    }
+    if (cand) {
+      out.push(el("div", { class: "card", style: "margin-bottom:8px" }, [
+        el("h2", null, cand.revealed ? "Lucky break: the next stop is known!" : "Where did the suspect go next?"),
+        cand.parts.map(function (p) { return [el("div", { class: "mute" }, "• Someone says they " + p.text), p.flagSrc ? el("img", { class: "flagimg", src: p.flagSrc, alt: "A flag from the clue" }) : null]; }),
+        el("div", { class: "mute", style: "margin-top:6px" }, "Use Fact on each card, Rule Out the ones that don't fit, then Send an agent.")
+      ]));
+      cand.candidateIds.forEach(function (pid) {
+        var p = place(pid), outd = !!c.ruledOut[pid], showFacts = view.facts[c.id + pid];
+        out.push(el("div", { class: "cand" + (outd ? " out" : "") }, [
+          el("div", { class: "nm" }, p.city + ", " + p.country),
+          el("div", { class: "acts" }, [
+            el("button", { class: "btn", on: { click: function () { view.facts[c.id + pid] = !showFacts; render(); } } }, "Fact"),
+            el("button", { class: "btn", on: { click: function () { CE.toggleRuledOut(c, pid); save(); render(); } } }, outd ? "Undo" : "Rule Out"),
+            el("button", { class: "btn pink", disabled: outd, on: { click: function () { send(c.id, pid); } } }, "Send")
+          ]),
+          showFacts ? el("div", { class: "facts" }, CE.factSummary(countries[p.iso2] || null, p).map(function (r) { return el("div", null, [el("b", null, r.label + ": "), r.flagSrc ? el("img", { class: "flagimg", src: r.flagSrc, alt: "Flag of " + p.country }) : r.text]); })) : null
+        ]));
+      });
+    } else if (!atScene) {
+      var last = place(c.route[Math.max(0, c.progress)]);
+      var final = c.progress === CE.finalIdx(c);
+      out.push(el("div", { class: "card" }, [
+        el("h2", null, final ? "The suspect is here in " + last.city + "!" : "No new destination yet"),
+        el("div", { class: "mute" }, final ? "Open the Warrant tab, then arrest with an agent who is in " + last.city + "." : "Ask the agent in " + last.city + " again. Try a different focus (Transit & Ports finds trails fastest).")
+      ]));
+    }
+    if (!atScene) {
+      var again = place(c.route[c.progress]);
+      out.push(el("div", { class: "cand" }, [
+        el("div", null, [el("div", { class: "nm" }, "Look around " + again.city + " again"), el("div", { class: "mute" }, "A quick second look can turn up more clues.")]),
+        el("div", { class: "acts" }, [el("button", { class: "btn", on: { click: function () { send(c.id, again.id); } } }, "Send")])
+      ]));
+    }
+    return out;
+  }
+
+  function renderAgents(c) {
+    var out = Object.keys(state.agents).map(function (id) {
+      var a = state.agents[id], d = AR.byId(id);
+      var need = a.level < 3 ? AR.XP_FOR_LEVEL[a.level + 1] : AR.XP_FOR_LEVEL[3], prev = AR.XP_FOR_LEVEL[a.level];
+      var pct = a.level >= 3 ? 100 : Math.round(100 * (a.xp - prev) / Math.max(1, need - prev));
+      var status = a.status === "traveling" ? el("span", { "data-eta": id }, "Flying to " + cityName(a.assignment.toPlaceId) + " · " + mmss(a.assignment.arrivalTime - Date.now()))
+        : a.status === "onScene" ? "Waiting for orders in " + cityName(a.stationPlaceId) : "Ready in " + cityName(a.stationPlaceId);
+      return el("div", { class: "agent" }, [
+        el("div", { class: "badge" }, d.badge),
+        el("div", null, [
+          el("div", { style: "font-weight:800" }, d.name + "  · Lv " + a.level),
+          el("div", { class: "mute" }, status), el("div", { class: "mute" }, "Best at " + AR.FOCUS[d.specialty].label + " · " + d.quirk),
+          el("div", { class: "row" }, [el("span", { class: "hearts" }, new Array(a.rapport + 1).join("♥") + new Array(6 - a.rapport).join("♡")), el("span", { class: "mute" }, "rapport")]),
+          el("div", { class: "bar2" }, el("i", { style: "width:" + pct + "%" }))
+        ]),
+        a.status === "onScene" && a.assignment && a.assignment.caseId === c.id ? el("button", { class: "btn pink", on: { click: function () { delete view.dismissed[id]; focusSheet(c, a); } } }, "Orders") : null
+      ]);
+    });
+    AR.AGENTS.filter(function (d) { return !state.agents[d.id]; }).forEach(function (d) {
+      out.push(el("div", { class: "agent locked" }, [el("div", { class: "badge" }, "❔"), el("div", null, [el("div", { style: "font-weight:800" }, "Locked agent"),
+        el("div", { class: "mute" }, d.unlock.rank ? "Joins at " + MA.RANKS[d.unlock.rank - 1].name + " rank" : "Joins after " + d.unlock.solved + " solved cases")]), null]));
+    });
+    return out;
+  }
+
+  var TRAIT_NAMES = { hairColor: "Hair colour", hairStyle: "Hair style", build: "Build", height: "Height", complexion: "Skin", eyeColor: "Eyes", facialHair: "Facial hair" };
+  function renderWarrant(c) {
+    var out = [];
+    out.push(el("div", { class: "traits" }, CE.TRAIT_KEYS.map(function (k) {
+      var t = c.uncovered[k];
+      return el("div", { class: "trait" + (t ? " known" : "") }, TRAIT_NAMES[k] + ": " + (t ? t.clueText : "?"));
+    })));
+    var matches = WE.matchingLineup(c);
+    var sel = view.selected && matches.some(function (m) { return m.id === view.selected; }) ? view.selected : null;
+    if (!matches.length) out.push(el("div", { class: "card mute" }, "Nobody in the lineup matches your clues, so no warrant can print yet. Ask agents for more suspect details."));
+    else out.push(el("div", { class: "mute", style: "margin-bottom:6px" }, matches.length === 1 ? "One match. Print the warrant!" : matches.length + " people match. Gather more clues, or gamble and pick one!"));
+    matches.forEach(function (m) {
+      var extra = CE.TRAIT_KEYS.filter(function (k) { return !c.uncovered[k] && m.traits[k]; }).map(function (k) { return m.traits[k].clueText; });
+      out.push(el("button", { class: "sus" + (sel === m.id ? " sel" : ""), on: { click: function () { view.selected = m.id; render(); } } }, [
+        el("div", null, [el("div", { style: "font-weight:800" }, m.displayName), el("div", { class: "tiny" }, extra.length ? "Also: " + extra.join(", ") : "")])
+      ]));
+    });
+    if (matches.length) {
+      out.push(el("button", { class: "btn gold", style: "width:100%;margin-bottom:10px", disabled: !sel, on: { click: function () { var r = WE.printWarrant(state, ctx(), c.id, sel); save(); toast(r.ok ? (r.gamble ? "Warrant printed. A gamble!" : "Warrant printed.") : "Pick a suspect first."); render(); } } }, sel ? "Print warrant" : "Pick a suspect"));
+    }
+    if (c.warrant) {
+      out.push(el("div", { class: "card" }, [
+        el("h2", null, "Warrant ready: " + c.warrant.name),
+        el("div", { class: "mute" }, "Pick an agent. They must be in the right city to make the arrest."),
+        Object.keys(state.agents).map(function (id) { return state.agents[id]; }).filter(function (a) { return a.status !== "traveling"; }).map(function (a) {
+          var d = AR.byId(a.id);
+          return el("button", { class: "focusbtn", on: { click: function () { arrest(c.id, a.id); } } }, [el("b", null, d.badge + " " + d.name + " arrests in " + cityName(a.stationPlaceId)), el("div", { class: "mute" }, "Wrong city or wrong person costs trust.")]);
+        })
+      ]));
+    } else if (matches.length) {
+      out.push(el("div", { class: "mute" }, "No warrant yet. An arrest without a warrant spooks the suspect and costs trust."));
+    }
+    return out;
+  }
+
+  function liveUpdate() {
+    runTick(false);
+    var c = curCase();
+    if (c) { var old = document.querySelector("[data-pace]"); if (old) old.replaceWith(paceChip(c)); }
+    document.querySelectorAll("[data-eta]").forEach(function (n) {
+      var a = state.agents[n.getAttribute("data-eta")];
+      if (a && a.assignment) n.textContent = "Flying to " + cityName(a.assignment.toPlaceId) + " · " + mmss(a.assignment.arrivalTime - Date.now());
+    });
+  }
+  load().then(function () {
+    state = CE.load(ctx());
+    CE.syncRoster(state, ctx());
+    runTick(true); save(); render();
+    setInterval(liveUpdate, 1000);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) runTick(false); });
+    window.addEventListener("storage", function (e) { if (e.key === MA.STORAGE_KEY) renderBar(); });
+    window.__desk = { state: function () { return state; }, ctx: ctx, render: render };
+  }).catch(function (e) {
+    document.getElementById("main").innerHTML = "";
+    document.getElementById("main").appendChild(el("div", { class: "empty" }, [
+      el("h2", null, "Can't open the case files"),
+      el("div", { class: "mute" }, "Open this page from the game's web link (not straight from a file) so the data can load. " + (e && e.message ? "(" + e.message + ")" : ""))
+    ]));
+  });
+})();
+</script>
+</body>
+</html>
