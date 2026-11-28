@@ -6,7 +6,8 @@
   var SLOTS = {
     hack: { title: "Hack Lab", blurb: "Break into a suspect's files." },
     cipher: { title: "Cipher Lab", blurb: "Crack coded messages." },
-    dossier: { title: "Dossier Deduction", blurb: "Work out who the suspect is." }
+    dossier: { title: "Dossier Deduction", blurb: "Work out who the suspect is." },
+    unblur: { title: "Flag Unblur", blurb: "Name the flag before it sharpens." }
   };
   var impl = {};
   function register(kind, def) { if (!SLOTS[kind] || !def || typeof def.open !== "function") return false; impl[kind] = def; return true; }
