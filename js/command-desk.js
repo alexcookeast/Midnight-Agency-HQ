@@ -14,7 +14,7 @@
   var HQ = { lat: 45.27, lon: -66.06, city: "Saint John" };    // player's home base, map pin only
 
   var roster = null, countries = {}, state = null, map = null, intel = null, intelKey = null;
-  var view = { caseId: null, tab: "board", selected: null, facts: {}, dismissed: {}, mapPlace: null, chan: "all", ringed: {} };
+  var view = { caseId: null, tab: "board", selected: null, facts: {}, dismissed: {}, mapPlace: null, chan: "all", ringed: {}, drawer: false, openMsg: null, autoplay: null, pick: null };
   var CA = window.CommsAudio, CN = window.CrumpledNotes;
   var soundOn = readSound();
 
@@ -384,6 +384,7 @@
     if (!view.mapPlace && !c) setIntel(null);
     pushMap();
     if (state) checkIncoming(false);
+    if (view.drawer && !view.openMsg) renderDrawer();
   }
   function renderBar() {
     var p = MA.read().player, trust = Math.max(0, Math.min(5, Number(p.trust)));
@@ -398,6 +399,7 @@
       tabs,
       MA.timeMode() === "real" ? el("span", { class: "chip", title: "GM Suite: real travel times" }, "⏱ Real time") : null,
       el("button", { class: "btn gold", on: { click: newCase } }, "+ Case"),
+      el("button", { class: "btn" + (CE.unreadCounts(state).all ? " gold" : ""), id: "commsBtn", on: { click: function () { view.drawer ? closeDrawer() : openDrawer(); } } }, "📨 Comms" + (CE.unreadCounts(state).all ? " (" + CE.unreadCounts(state).all + ")" : "")),
       el("button", { class: "btn", on: { click: function () { openFactbook(null); } } }, "📖 Factbook"),
       el("button", { class: "btn", on: { click: passport } }, "Passport " + state.passport.length),
       el("button", { class: "btn", "aria-label": "Sound", on: { click: function () { soundOn = !soundOn; writeSound(soundOn); if (!soundOn && window.speechSynthesis) window.speechSynthesis.cancel(); renderBar(); } } }, soundOn ? "🔊" : "🔇")
@@ -429,11 +431,10 @@
     ]);
   }
   function renderSide(c) {
-    var tabs = el("div", { class: "seg" }, [["board", "Board"], ["agents", "Agents"], ["warrant", "Warrant"], ["comms", "Comms"], ["labs", "Labs"]].map(function (t) {
-      var unread = t[0] === "comms" ? CE.unreadCounts(state).all : 0;
-      return el("button", { class: view.tab === t[0] ? "on" : "", on: { click: function () { view.tab = t[0]; render(); } } }, [t[1], unread ? el("span", { class: "badge-n", "aria-label": unread + " unread" }, unread) : null]);
+    var tabs = el("div", { class: "seg" }, [["board", "Board"], ["agents", "Agents"], ["warrant", "Dossier"], ["labs", "Labs"]].map(function (t) {
+      return el("button", { class: view.tab === t[0] ? "on" : "", on: { click: function () { view.tab = t[0]; render(); } } }, t[1]);
     }));
-    var body = view.tab === "labs" ? renderLabs() : view.tab === "comms" ? renderComms() : !c ? el("div", { class: "mute", style: "padding:10px" }, "Take a case to use the board, agents and warrant.") :
+    var body = view.tab === "labs" ? renderLabs() : !c ? el("div", { class: "mute", style: "padding:10px" }, "Take a case to use the board, agents and dossier.") :
       view.tab === "agents" ? renderAgents(c) : view.tab === "warrant" ? renderWarrant(c) : renderBoard(c);
     return el("div", { class: "colfill" }, [tabs, el("div", { class: "scroll", style: "flex:1" }, body)]);
   }
@@ -443,28 +444,38 @@
   var REL_LABEL = { confirmed: "Confirmed", witness: "Witness", rumour: "Rumour" };
   function ago(at) { var m = Math.max(0, Math.round((Date.now() - at) / 60000)); return m < 1 ? "now" : m < 60 ? m + " min" : Math.round(m / 60) + " h"; }
   function snippet(t) { t = String(t || ""); return t.length > 70 ? t.slice(0, 67) + "…" : t; }
-  function renderComms() {
+  function who(m) { return (m.from.id === "chief" ? "🎖️ " : m.from.badge ? m.from.badge + " " : "") + m.from.name; }
+  function openDrawer(msgId) { view.drawer = true; view.openMsg = msgId || null; renderDrawer(); renderBar(); }
+  function closeDrawer() { CA.stop(); view.drawer = false; view.openMsg = null; view.autoplay = null; renderDrawer(); renderBar(); }
+  function renderDrawer() {
+    var d = $("drawer"); if (!d) { d = el("aside", { id: "drawer", "aria-label": "Comms" }); document.body.appendChild(d); }
+    d.innerHTML = ""; d.className = "drawer" + (view.drawer ? " open" : "");
+    if (!view.drawer) return;
+    var m = view.openMsg ? CE.allComms(state).filter(function (x) { return x.id === view.openMsg; })[0] : null;
+    d.appendChild(el("div", { class: "drawer-h" }, [
+      m ? el("button", { class: "btn", on: { click: function () { CA.stop(); view.openMsg = null; renderDrawer(); renderBar(); } } }, "← Back") : el("h2", null, "📨 Comms"),
+      el("button", { class: "btn", "aria-label": "Close comms", on: { click: closeDrawer } }, "✕")
+    ]));
+    d.appendChild(el("div", { class: "drawer-b" }, m ? commDetail(m) : commList()));
+  }
+  function commList() {
     var counts = CE.unreadCounts(state), all = CE.allComms(state);
     var chips = el("div", { class: "row", style: "margin-bottom:8px" }, Object.keys(CH_LABEL).map(function (k) {
-      return el("button", { class: "chipbtn" + (view.chan === k ? " on" : ""), on: { click: function () { view.chan = k; render(); } } }, [CH_LABEL[k], counts[k] ? el("span", { class: "badge-n" }, counts[k]) : null]);
+      return el("button", { class: "chipbtn" + (view.chan === k ? " on" : ""), on: { click: function () { view.chan = k; renderDrawer(); } } }, [CH_LABEL[k], counts[k] ? el("span", { class: "badge-n" }, counts[k]) : null]);
     }));
     var list = all.filter(function (m) { return view.chan === "all" || m.channel === view.chan; });
     var rows = list.slice(0, 40).map(function (m) {
-      return el("button", { class: "mrow" + (m.state === "new" ? " unread" : ""), on: { click: function () { openComm(m); } } }, [
+      return el("button", { class: "mrow" + (m.state === "new" ? " unread" : ""), on: { click: function () { markRead(m); view.openMsg = m.id; renderDrawer(); renderBar(); } } }, [
         el("span", { class: "mico" }, CH_ICON[m.channel]),
-        el("span", { class: "mbody" }, [
-          el("b", null, (m.from.id === "chief" ? "🎖️ " : m.from.badge ? m.from.badge + " " : "") + m.from.name + " · " + m.subject),
-          el("span", { class: "mute" }, snippet(m.body))
-        ]),
+        el("span", { class: "mbody" }, [el("b", null, who(m) + " · " + m.subject), el("span", { class: "mute" }, snippet(m.body))]),
         el("span", { class: "mmeta" }, [ago(m.at), m.reliability && m.reliability !== "confirmed" ? el("span", { class: "rel rel-" + m.reliability }, REL_LABEL[m.reliability]) : null])
       ]);
     });
     return [chips, rows.length ? rows : el("div", { class: "mute", style: "padding:10px" }, all.length ? "Nothing in this folder." : "No messages yet. Reports from your agents and the Chief land here.")];
   }
   function markRead(m) { if (m.state === "new") { m.state = "read"; save(); } }
-  function openComm(m) {
-    markRead(m);
-    var voice = m.channel === "call" || m.channel === "voicemail";
+  function commDetail(m) {
+    var voice = m.channel === "call" || m.channel === "voicemail", cid = m.callerId || {};
     var transcript = voice ? el("div", { class: "transcript", "aria-live": "polite" }, (m.transcript || [m.body]).map(function (t, i) { return el("span", { class: "tchunk", "data-i": i }, t + " "); })) : null;
     var canvas = voice ? el("canvas", { class: "wave", "aria-label": "Call waveform" }) : null;
     var playing = false, btn = null;
@@ -478,19 +489,18 @@
         onEnd: function () { playing = false; setBtn(); var all = transcript.querySelectorAll(".tchunk"); for (var k = 0; k < all.length; k += 1) all[k].className = "tchunk said"; }
       });
     }
-    if (voice) btn = el("button", { class: "btn pink", style: "margin:8px 0", on: { click: function () { if (playing) { CA.stop(); playing = false; setBtn(); } else start(); } } });
+    if (voice) btn = el("button", { class: "btn pink", style: "margin:8px 0;width:100%", on: { click: function () { if (playing) { CA.stop(); playing = false; setBtn(); } else start(); } } });
     setBtn();
-    openLayer(el("div", { class: "sheet" }, [
-      el("div", { class: "row", style: "justify-content:space-between" }, [
-        el("div", null, [el("div", { class: "mute" }, CH_ICON[m.channel] + " " + CH_LABEL[m.channel].replace(/s$/, "") + " · " + ago(m.at) + " ago"), el("h1", { style: "margin:2px 0" }, (m.from.id === "chief" ? "🎖️ " : m.from.badge ? m.from.badge + " " : "") + m.from.name)]),
-        el("button", { class: "btn", on: { click: function () { CA.stop(); closeLayer(); render(); } } }, "Close")
-      ]),
+    if (voice && view.autoplay === m.id) { view.autoplay = null; setTimeout(start, 30); }
+    return [
+      el("div", { class: "mute" }, CH_ICON[m.channel] + " " + CH_LABEL[m.channel].replace(/s$/, "") + " · " + ago(m.at) + " ago"),
+      el("h1", { style: "margin:2px 0" }, cid.anonymous ? "🕶️ Unknown caller" : who(m)),
+      cid.anonymous ? el("div", { class: "pill hold", style: "display:inline-block;margin:4px 0" }, "Anonymous tip") : (cid.number ? el("div", { class: "mute" }, cid.number) : null),
       el("div", { class: "mute" }, m.subject),
       m.reliability && m.reliability !== "confirmed" ? el("div", { class: "row", style: "margin:6px 0" }, [el("span", { class: "rel rel-" + m.reliability }, REL_LABEL[m.reliability] + " source"), m.hint ? el("span", { class: "hintline" }, m.hint) : null]) : null,
-      voice ? [btn, canvas, transcript] : el("p", { class: "mbodytxt" }, m.body),
-      m.visual && m.visual.kind === "note" ? el("div", { class: "notewrap" }, [el("div", { class: "mute" }, "A crumpled note came with it:"), CN.render(m.visual.note)]) : null
-    ]));
-    if (m.from.id === "chief" && m.channel === "call" && m.state === "read" && !m.__played) m.__played = true;
+      voice ? [btn, canvas, transcript] : el("p", { class: "mbodytxt" + (m.channel === "email" ? " email" : " chat") }, m.body),
+      m.visual && m.visual.kind === "note" ? el("div", { class: "notewrap" }, [el("div", { class: "mute" }, "Found with it:"), CN.render(m.visual.note)]) : null
+    ];
   }
   var ringEl = null;
   function checkIncoming(first) {
@@ -504,14 +514,14 @@
   }
   function showRing(m) {
     if (ringEl) ringEl.remove();
-    var who = (m.from.id === "chief" ? "🎖️ " : m.from.badge ? m.from.badge + " " : "") + m.from.name;
-    ringEl = el("div", { class: "ring", role: "alert" }, [
-      el("div", { class: "ring-t" }, ["📞 Incoming call", el("b", null, who)]),
-      el("button", { class: "btn pink", on: { click: function () { ringEl.remove(); ringEl = null; openComm(m); setTimeout(function () { var b = document.querySelector(".sheet .btn.pink"); if (b) b.click(); }, 50); } } }, "Answer"),
-      el("button", { class: "btn", on: { click: function () { ringEl.remove(); ringEl = null; render(); } } }, "Later")
+    var cid = m.callerId || { label: m.from.name }, anon = !!cid.anonymous;
+    var node = el("div", { class: "ring" + (anon ? " anon" : ""), role: "alert" }, [
+      el("div", { class: "ring-t" }, [anon ? "🕶️ Incoming call · anonymous tip" : "📞 Incoming call", el("b", null, anon ? "Unknown caller" : who(m)), el("span", null, anon ? "Number withheld" : [cid.sub, cid.number].filter(Boolean).join(" · "))]),
+      el("button", { class: "btn pink", on: { click: function () { node.remove(); ringEl = null; view.autoplay = m.id; markRead(m); openDrawer(m.id); } } }, "Answer"),
+      el("button", { class: "btn", on: { click: function () { node.remove(); ringEl = null; render(); } } }, "Later")
     ]);
-    document.body.appendChild(ringEl);
-    setTimeout(function () { if (ringEl === ringEl && ringEl && ringEl.parentNode) { ringEl.remove(); ringEl = null; } }, 20000);
+    ringEl = node; document.body.appendChild(node);
+    setTimeout(function () { if (node.parentNode) { node.remove(); if (ringEl === node) ringEl = null; } }, 20000);
   }
 
   function renderLabs() {
@@ -561,7 +571,7 @@
       var final = c.progress === CE.finalIdx(c);
       out.push(el("div", { class: "card" }, [
         el("h2", null, final ? "The suspect is here in " + last.city + "!" : "No new destination yet"),
-        el("div", { class: "mute" }, final ? "Open the Warrant tab, then arrest with an agent who is in " + last.city + "." : "Ask the agent in " + last.city + " again. Try a different focus (Transit & Ports finds trails fastest).")
+        el("div", { class: "mute" }, final ? "Open the Dossier tab, then arrest with an agent who is in " + last.city + "." : "Ask the agent in " + last.city + " again. Try a different focus (Transit & Ports finds trails fastest).")
       ]));
     }
     if (!atScene) {
@@ -600,22 +610,72 @@
   }
 
   var TRAIT_NAMES = { hairColor: "Hair colour", hairStyle: "Hair style", build: "Build", height: "Height", complexion: "Skin", eyeColor: "Eyes", facialHair: "Facial hair" };
+  var SKIN = { fair: "#F3D2B8", olive: "#D9B48C", tan: "#C99366", "deep-brown": "#6B4429", "warm-brown": "#9A6A45" };
+  var HAIR = { black: "#1b1b1f", "dark-brown": "#3a2518", "light-brown": "#7a5232", blonde: "#E3C36A", "red-auburn": "#A5461F", "silver-gray": "#BFC3CC" };
+  var EYE = { brown: "#4a2a12", hazel: "#8a6a2a", green: "#2f7a4a", blue: "#2f6fb0", gray: "#7b8794" };
+  function cat(m, k) { return m && m.traits && m.traits[k] ? m.traits[k].category : ""; }
+  function mugshot(m, size) {
+    var ns = "http://www.w3.org/2000/svg", h = HAIR[cat(m, "hairColor")] || "#333", sk = SKIN[cat(m, "complexion")] || "#C99366", ey = EYE[cat(m, "eyeColor")] || "#333";
+    var style = cat(m, "hairStyle"), build = cat(m, "build"), fh = cat(m, "facialHair"), ht = cat(m, "height");
+    var sw = /stocky|athletic/.test(build) ? 46 : /lanky|wiry/.test(build) ? 30 : 38, top = ht === "tall" ? 84 : ht === "short" ? 94 : 89;
+    var g = '<rect width="100" height="100" fill="#2a2450"/><rect x="0" y="' + (ht === "tall" ? 12 : 22) + '" width="100" height="2" fill="#6f66b0"/>' +
+      '<path d="M' + (50 - sw) + ' 100 Q50 ' + (top - 6) + ' ' + (50 + sw) + ' 100Z" fill="#3b3470"/>';
+    var back = /ponytail|braids/.test(style) ? '<circle cx="50" cy="22" r="9" fill="' + h + '"/>' : "";
+    var cap = style === "curly" ? '<circle cx="34" cy="38" r="9" fill="' + h + '"/><circle cx="50" cy="32" r="11" fill="' + h + '"/><circle cx="66" cy="38" r="9" fill="' + h + '"/>' : style === "braids" ? '<path d="M32 44Q32 22 50 22Q68 22 68 44L62 40Q50 30 38 40Z" fill="' + h + '"/><rect x="29" y="44" width="5" height="26" rx="2.5" fill="' + h + '"/><rect x="66" y="44" width="5" height="26" rx="2.5" fill="' + h + '"/>' : style === "wavy-swept" ? '<path d="M30 46Q28 20 52 22Q74 22 70 46Q60 32 40 36Q34 38 30 46Z" fill="' + h + '"/>' : style === "tousled" ? '<path d="M30 46L34 26L42 32L48 20L56 31L66 24L70 46Q50 30 30 46Z" fill="' + h + '"/>' : '<path d="M31 46Q30 24 50 24Q70 24 69 46Q50 34 31 46Z" fill="' + h + '"/>';
+    var face = '<ellipse cx="50" cy="52" rx="19" ry="23" fill="' + sk + '"/><circle cx="43" cy="50" r="3" fill="' + ey + '"/><circle cx="57" cy="50" r="3" fill="' + ey + '"/><path d="M44 62Q50 66 56 62" stroke="#00000066" stroke-width="2" fill="none"/>';
+    var hair = /beard/.test(fh) ? '<path d="M33 56Q50 86 67 56Q60 70 50 70Q40 70 33 56Z" fill="' + h + '"/>' : /mustache|moustache/.test(fh) ? '<path d="M42 59Q50 55 58 59Q50 62 42 59Z" fill="' + h + '"/>' : /stub/.test(fh) ? '<path d="M34 58Q50 80 66 58Q60 72 50 72Q40 72 34 58Z" fill="' + h + '" opacity=".35"/>' : "";
+    var d = document.createElement("span"); d.className = "mug"; d.style.width = d.style.height = (size || 64) + "px";
+    d.innerHTML = '<svg xmlns="' + ns + '" viewBox="0 0 100 100" role="img" aria-label="Suspect photo">' + g + back + face + cap + hair + "</svg>";
+    return d;
+  }
+  function tagChip(t) { return t && t !== "confirmed" ? el("span", { class: "rel rel-" + t }, REL_LABEL[t]) : null; }
+  function traitPicker(c, k) {
+    var reps = CE.reportsFor(c, k).filter(function (r) { return true; }), opts = CE.traitOptions(c, k);
+    var out = [];
+    if (reps.length) out.push(el("div", { class: "mute" }, "From your reports:"));
+    reps.forEach(function (r) {
+      out.push(el("button", { class: "pickbtn", on: { click: function () { CE.pinReport(c, r.id); view.pick = null; save(); render(); } } }, [el("span", null, r.clueText), r.shown ? tagChip(r.tag) : null, r.shown && r.hint ? el("span", { class: "hintline" }, r.hint) : null]));
+    });
+    out.push(el("div", { class: "mute", style: "margin-top:6px" }, "Or write down what you think:"));
+    opts.forEach(function (o) { out.push(el("button", { class: "pickbtn alt", on: { click: function () { CE.pinManual(c, k, o.category); view.pick = null; save(); render(); } } }, o.clueText)); });
+    return el("div", { class: "picker" }, out);
+  }
+  function suspectCard(c, m) {
+    var ring = (roster.crimeRings || {})[m.ringId], haunts = ring && ring.homeHubs ? ring.homeHubs.map(function (h) { return h.city; }) : [];
+    var prior = (state.caught || {})[m.id];
+    return el("div", { class: "card dossier" }, [
+      el("div", { class: "row" }, [mugshot(m, 84), el("div", null, [
+        el("h2", { style: "margin:0" }, m.displayName), m.nickname ? el("div", { class: "mute" }, "“" + m.nickname + "”") : null,
+        m.rankTitle ? el("div", { class: "tiny" }, m.rankTitle) : null])]),
+      ring ? el("div", { class: "fb-row" }, [el("b", null, "Gang: "), ring.name + (ring.motto ? " — " + ring.motto : "")]) : null,
+      haunts.length ? el("div", { class: "fb-row" }, [el("b", null, "Known haunts: "), haunts.join(", ")]) : null,
+      el("div", { class: "fb-row" }, [el("b", null, "Record: "), prior ? "Caught before ×" + prior + " · fingerprints on file 🖐️" : "No arrests yet · no fingerprints on file"])
+    ]);
+  }
   function renderWarrant(c) {
     var out = [];
-    out.push(el("div", { class: "traits" }, CE.TRAIT_KEYS.map(function (k) {
-      var t = c.uncovered[k];
-      return el("div", { class: "trait" + (t ? " known" : "") }, TRAIT_NAMES[k] + ": " + (t ? t.clueText : "?"));
-    })));
-    var matches = WE.matchingLineup(c);
-    var sel = view.selected && matches.some(function (m) { return m.id === view.selected; }) ? view.selected : null;
-    if (!matches.length) out.push(el("div", { class: "card mute" }, "Nobody in the lineup matches your clues, so no warrant can print yet. Ask agents for more suspect details."));
-    else out.push(el("div", { class: "mute", style: "margin-bottom:6px" }, matches.length === 1 ? "One match. Print the warrant!" : matches.length + " people match. Gather more clues, or gamble and pick one!"));
-    matches.forEach(function (m) {
-      var extra = CE.TRAIT_KEYS.filter(function (k) { return !c.uncovered[k] && m.traits[k]; }).map(function (k) { return m.traits[k].clueText; });
-      out.push(el("button", { class: "sus" + (sel === m.id ? " sel" : ""), on: { click: function () { view.selected = m.id; render(); } } }, [
-        el("div", null, [el("div", { style: "font-weight:800" }, m.displayName), el("div", { class: "tiny" }, extra.length ? "Also: " + extra.join(", ") : "")])
+    var nb = (c.notebook && c.notebook.traits) || {};
+    out.push(el("div", { class: "mute", style: "margin-bottom:6px" }, "Your notebook. Tap a line to write down a clue. Nothing is filled in for you."));
+    CE.TRAIT_KEYS.forEach(function (k) {
+      var t = nb[k], open = view.pick === k;
+      out.push(el("div", { class: "trow" }, [
+        el("button", { class: "trait" + (t ? " known" : ""), "data-trait": k, on: { click: function () { view.pick = open ? null : k; render(); } } }, [el("span", null, TRAIT_NAMES[k] + ": " + (t ? t.clueText : "?")), t ? tagChip(t.tag) : null]),
+        t ? el("button", { class: "btn", "aria-label": "Clear " + TRAIT_NAMES[k], on: { click: function () { CE.unpin(c, k); save(); render(); } } }, "✕") : null,
+        open ? traitPicker(c, k) : null
       ]));
     });
+    var matches = WE.matchingLineup(c);
+    var sel = view.selected && matches.some(function (m) { return m.id === view.selected; }) ? view.selected : null;
+    if (!matches.length) out.push(el("div", { class: "card mute" }, "Nobody matches your notes. One of your clues may be wrong. Check the shaky sources (Rumour or Witness) and ask again."));
+    else out.push(el("div", { class: "mute", style: "margin:8px 0 6px" }, matches.length === 1 ? "One match. Print the warrant!" : matches.length + " people match. Gather more clues, or gamble and pick one!"));
+    matches.forEach(function (m) {
+      var extra = CE.TRAIT_KEYS.filter(function (k) { return !nb[k] && m.traits[k]; }).map(function (k) { return m.traits[k].clueText; });
+      out.push(el("button", { class: "sus" + (sel === m.id ? " sel" : ""), "data-sus": m.id, on: { click: function () { view.selected = m.id; render(); } } }, [
+        mugshot(m, 56), el("div", null, [el("div", { style: "font-weight:800" }, m.displayName), el("div", { class: "tiny" }, extra.length ? "Also: " + extra.join(", ") : "")])
+      ]));
+    });
+    var chosen = sel ? matches.filter(function (m) { return m.id === sel; })[0] : null;
+    if (chosen) out.push(suspectCard(c, chosen));
     if (matches.length) {
       out.push(el("button", { class: "btn gold", style: "width:100%;margin-bottom:10px", disabled: !sel, on: { click: function () { var r = WE.printWarrant(state, ctx(), c.id, sel); save(); toast(r.ok ? (r.gamble ? "Warrant printed. A gamble!" : "Warrant printed.") : "Pick a suspect first."); render(); } } }, sel ? "Print warrant" : "Pick a suspect"));
     }
@@ -655,7 +715,7 @@
     setInterval(liveUpdate, 1000);
     document.addEventListener("visibilitychange", function () { if (!document.hidden) runTick(false); });
     window.addEventListener("storage", function (e) { if (e.key === MA.STORAGE_KEY) renderBar(); });
-    window.__desk = { state: function () { return state; }, ctx: ctx, render: render, map: function () { return map; }, openFactbook: openFactbook };
+    window.__desk = { state: function () { return state; }, ctx: ctx, render: render, map: function () { return map; }, openFactbook: openFactbook, openDrawer: openDrawer };
   }
   load().then(boot).catch(function (e) {
     $("feed").innerHTML = "";

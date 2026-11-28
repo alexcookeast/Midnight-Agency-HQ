@@ -262,9 +262,62 @@
 
   // Reveal one more trait of the real suspect. When `decisive`, pick the trait that leaves the
   // fewest lineup candidates standing.
+  // A trait is worth asking about again when every report on it so far was wrong (so the player can spot the conflict).
+  function needsSecondOpinion(c, k) {
+    var rs = (c.reports || []).filter(function (r) { return r.traitKey === k; });
+    return rs.length > 0 && rs.every(function (r) { return !r.truth; });
+  }
+
+  // One trait claim from a source. Wrong claims only happen from Junior Analyst up, only for shaky sources
+  // (Reliability.WRONG_RATE), and show a different value that a lineup member really has. Uses its own RNG stream.
+  function makeReport(c, ctx, key, o) {
+    o = o || {}; c.reports = c.reports || [];
+    var RL = global.Reliability, level = Math.max(1, Math.floor(Number(ctx.rankLevel) || 1)), truth = c.suspect.traits[key];
+    var side = sideRng(hashStr(c.id + ":rep:" + c.reports.length + ":" + key));
+    var tag = o.confirmed ? "confirmed" : (o.tag || (RL ? RL.sourceFor(o.focus || "locals", side) : "confirmed"));
+    var roll = RL ? RL.roll(side, level, tag) : { wrong: false, hint: null };
+    var claim = truth, wrong = false;
+    if (roll.wrong) {
+      var seen = {}, alts = [];
+      c.lineup.forEach(function (sx) { var t = sx.traits[key]; if (t && t.category !== truth.category && !seen[t.category]) { seen[t.category] = true; alts.push(t); } });
+      if (alts.length) { claim = alts[Math.floor(side() * alts.length)]; wrong = true; }
+    }
+    var shown = !!RL && level >= RL.MIN_LEVEL;
+    var rep = { id: "r" + (c.reports.length + 1), traitKey: key, category: claim.category, clueText: claim.clueText, tag: tag, hint: shown ? roll.hint : null, shown: shown, truth: !wrong, at: ctx.now };
+    c.reports.push(rep);
+    return rep;
+  }
+
+  // ---- the player's notebook (manual deduction: nothing is filled in for her)
+  function reportsFor(c, key) { return (c.reports || []).filter(function (r) { return r.traitKey === key; }); }
+  function pinReport(c, reportId) {
+    var r = (c.reports || []).filter(function (x) { return x.id === reportId; })[0]; if (!r) return false;
+    c.notebook = c.notebook || { traits: {} };
+    c.notebook.traits[r.traitKey] = { category: r.category, clueText: r.clueText, reportId: r.id, tag: r.shown ? r.tag : null, manual: false };
+    return true;
+  }
+  function traitOptions(c, key) {
+    var seen = {}, out = [];
+    c.lineup.forEach(function (sx) { var t = sx.traits[key]; if (t && !seen[t.category]) { seen[t.category] = true; out.push({ category: t.category, clueText: t.clueText }); } });
+    return out.sort(function (a, b) { return a.clueText < b.clueText ? -1 : 1; });
+  }
+  function pinManual(c, key, category) {
+    var o = traitOptions(c, key).filter(function (x) { return x.category === category; })[0]; if (!o) return false;
+    c.notebook = c.notebook || { traits: {} };
+    c.notebook.traits[key] = { category: o.category, clueText: o.clueText, reportId: null, tag: null, manual: true };
+    return true;
+  }
+  function unpin(c, key) { if (c.notebook) delete c.notebook.traits[key]; }
+  // Dev/test helper ("perfect notes"): pins every truthful trait. Never called by the game UI.
+  function pinTruth(c) {
+    c.notebook = c.notebook || { traits: {} };
+    Object.keys(c.uncovered).forEach(function (k) { c.notebook.traits[k] = { category: c.uncovered[k].category, clueText: c.uncovered[k].clueText, reportId: null, tag: null, manual: false }; });
+  }
+
   function uncoverTrait(c, ctx, decisive) {
     var rng = rngOf(ctx);
     var open = TRAIT_KEYS.filter(function (k) { return c.suspect.traits[k] && !c.uncovered[k]; });
+    if (!open.length) open = TRAIT_KEYS.filter(function (k) { return c.suspect.traits[k] && needsSecondOpinion(c, k); });
     if (!open.length) return null;
     var key;
     if (decisive) {
@@ -368,42 +421,91 @@
   }
 
   // ------------------------------------------------------------------ comms inbox (Wave 3)
-  var CHANNEL_BY_TYPE = { brief: "email", hq: "email", scene: "text", trail: "text", suspect: "text", deadend: "text", located: "text", lucky: "call" };
-  var SUBJECT_BY_TYPE = { brief: "New case file", hq: "HQ update", scene: "Scene report", trail: "Trail clue", suspect: "Suspect detail", deadend: "Dead end", located: "Suspect located", lucky: "Lucky break" };
+  // Channel voice: TEXTS are quick chatty messages from a known contact (a field agent on her roster);
+  // EMAILS are structured dispatches / case notes from HQ; CALLS and VOICEMAILS are spoken; anonymous tips are calls.
+  var CHANNEL_BY_TYPE = { brief: "email", hq: "email", scene: "email", trail: "text", suspect: "text", deadend: "text", located: "text", lucky: "call" };
+  var SUBJECT_BY_TYPE = { brief: "New case file", hq: "HQ update", scene: "Scene notes", trail: "Trail clue", suspect: "Suspect detail", deadend: "Dead end", located: "Suspect located", lucky: "Lucky break" };
+  var STYLE = {
+    mika: { open: ["Boss!", "Heads up!"], close: ["On it 🦊", "Want me to keep going?"] },
+    priya: { open: ["Hi!", "Quick update:"], close: ["Checking details 🦉", "Tell me what next?"] },
+    amara: { open: ["Hey hey!", "Okay okay,"], close: ["Big cat energy 🦁", "Say the word!"] },
+    kofi: { open: ["Slow and steady:", "Hello!"], close: ["No rush 🐢", "Your call, boss."] },
+    luca: { open: ["Ciao!", "Listen,"], close: ["Wolf on the trail 🐺", "What do we do?"] },
+    elsa: { open: ["Brr, it's cold here.", "Hi!"], close: ["Staying frosty ❄️", "Orders?"] },
+    sofia: { open: ["Hola!", "Oh! One sec:"], close: ["Flutter flutter 🦋", "Where to next?"] },
+    diego: { open: ["Eyes up!", "Report:"], close: ["Watching from above 🦅", "Ready when you are."] }
+  };
   function hashStr(s) { var h = 2166136261; for (var i = 0; i < s.length; i += 1) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
   function sideRng(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
   function chunkText(text) {
     var parts = String(text).replace(/\s+/g, " ").match(/[^.!?;:]+[.!?;:]*/g) || [String(text)];
     return parts.map(function (p) { return p.trim(); }).filter(Boolean);
   }
+  function lowerFirst(t) { t = String(t || ""); return t.charAt(0).toLowerCase() + t.slice(1); }
+
+  function bodyFor(channel, board, def, side, c) {
+    var say = board.say || {}, st = def && STYLE[def.id] || { open: ["Hi!"], close: ["Over to you."] };
+    var open = st.open[Math.floor(side() * st.open.length)], close = st.close[Math.floor(side() * st.close.length)];
+    var first = def ? def.name.split(" ")[0] : "HQ";
+    if (board.chief) return board.text;
+    if (board.anonymous) return "Psst. You did not hear this from me. " + lowerFirst(board.text.replace(/^An anonymous tip came in from [^:]+: /, "")).replace(/^the suspect has/, "The one you want has") + " Be careful out there.";
+    if (def && channel === "text") {
+      if (board.type === "trail") return open + " Just got to " + say.city + ". " + say.clue + " " + close;
+      if (board.type === "suspect") return open + " Asked around in " + say.city + ". Word is the suspect has " + say.clue + ". " + close;
+      if (board.type === "located") return open + " I think they're hiding right here in " + say.city + "! Should I stay put? " + close;
+      if (board.type === "deadend") return open + " " + board.text.replace(def.name + " ", "I ").replace(/^I reached/, "Made it to").replace(/ and /, " but ") + " " + close;
+      if (say.nothing) return open + " Looked around " + say.city + " and found nothing new yet. Ask me again? " + close;
+      return open + " " + board.text + " " + close;
+    }
+    if (def && channel === "voicemail") {
+      var core = board.type === "trail" ? say.clue : board.type === "suspect" ? "Word is the suspect has " + say.clue + "." : board.text;
+      return "Hi boss, it's " + first + ". Sorry I missed you. I made it to " + (say.city || "the next stop") + ". " + core + " Talk soon.";
+    }
+    if (def && channel === "call") return first + " here! Big news. " + board.text.replace(/^LUCKY BREAK! /, "").replace(def.name, first);
+    // emails: structured dispatches / case notes
+    var head = (SUBJECT_BY_TYPE[board.type] || "Update").toUpperCase();
+    var num = c && c.number ? "Case #" + c.number : "Case file";
+    if (board.type === "brief") return head + "\n" + num + "\nSummary: " + board.text + "\nNext step: Send an agent to the scene.";
+    if (board.type === "scene") return head + "\n" + num + "\nObservation: " + board.text + "\nNext step: Ask an agent to look around.";
+    if (board.type === "trail") return head + " (HQ intercept)\n" + num + "\nDetails: " + board.text.replace(/^HQ intercept: /, "") + "\nNext step: Check the Country board.";
+    if (board.type === "suspect") return head + " (HQ intercept)\n" + num + "\nDetails: " + board.text.replace(/^(HQ intercept|Ring intel): /, "") + "\nNext step: Pin it in the Dossier if you believe it.";
+    return head + "\n" + num + "\nDetails: " + board.text;
+  }
+
+  function phoneNumber(id) { return "555-01" + ("0" + (hashStr(String(id)) % 100)).slice(-2); }
 
   // One creation point for the inbox. board = the c.board entry (or a Chief call descriptor).
   function addComm(c, ctx, board) {
     c.comms = c.comms || [];
     var AR = global.AgentRoster, def = board.agentId && AR ? AR.byId(board.agentId) : null;
-    var chief = !!board.chief, channel = board.channel || CHANNEL_BY_TYPE[board.type] || "text";
-    if (!board.channel && board.long && (board.type === "trail" || board.type === "suspect" || board.type === "located")) channel = "voicemail";
-    var CC = global.ChiefCalls;
-    var from = chief ? { kind: "hq", id: "chief", name: "The Chief" } : def ? { kind: "agent", id: def.id, name: def.name, badge: def.badge } : { kind: "hq", name: "HQ" };
-    var voice = chief && CC ? CC.CHIEF.voice : def ? { pitch: def.voice.pitch, rate: def.voice.rate } : { pitch: 1, rate: 1 };
+    var chief = !!board.chief, anon = !!board.anonymous;
+    var channel = board.channel || (anon ? "call" : CHANNEL_BY_TYPE[board.type]) || "text";
+    if (!board.channel && !anon && board.long && def && (board.type === "trail" || board.type === "suspect" || board.type === "located")) channel = "voicemail";
+    if (channel === "text" && !def) channel = "email";                       // texts only come from known contacts
+    var CC = global.ChiefCalls, side = sideRng(hashStr(String(board.id || c.id) + ":voice"));
+    var from = chief ? { kind: "hq", id: "chief", name: "The Chief" } : anon ? { kind: "informant", name: "Anonymous tip" } : def ? { kind: "agent", id: def.id, name: def.name, badge: def.badge } : { kind: "hq", name: "HQ" };
+    var voice = chief && CC ? CC.CHIEF.voice : anon ? { pitch: 0.7, rate: 0.88 } : def ? { pitch: def.voice.pitch, rate: def.voice.rate } : { pitch: 1, rate: 1 };
+    var callerId = chief ? { label: "The Chief", sub: "HQ line", anonymous: false, number: "555-0100" }
+      : anon ? { label: "Unknown caller", sub: "Anonymous tip", anonymous: true, number: null }
+      : def ? { label: def.name, sub: "Field agent", anonymous: false, number: phoneNumber(def.id) } : { label: "HQ", sub: "Midnight Agency", anonymous: false, number: "555-0100" };
+    var body = bodyFor(channel, board, def, side, c);
     var m = {
-      id: "m-" + c.id + "-" + (c.commSeq = (c.commSeq || 0) + 1), boardId: board.id, caseId: c.id, at: ctx.now, channel: channel, from: from,
-      subject: chief ? "Message from the Chief" : (SUBJECT_BY_TYPE[board.type] || "Report"),
-      body: board.text, voice: voice, state: "new", lock: null,
-      clueRef: { type: board.type === "trail" || board.type === "lucky" && board.stopIdx != null ? "trail" : board.traitKey ? "suspect" : "flavor", stopIdx: board.stopIdx, traitKey: board.traitKey },
+      id: "m-" + c.id + "-" + (c.commSeq = (c.commSeq || 0) + 1), boardId: board.id, caseId: c.id, at: ctx.now, channel: channel, from: from, callerId: callerId,
+      subject: chief ? "Message from the Chief" : anon ? "Anonymous tip" : (SUBJECT_BY_TYPE[board.type] || "Report"),
+      body: body, voice: voice, state: "new", lock: null,
+      clueRef: { type: board.type === "trail" ? "trail" : board.traitKey ? "suspect" : "flavor", stopIdx: board.stopIdx, traitKey: board.traitKey },
       reliability: null, hint: null, visual: null
     };
-    if (channel === "call" || channel === "voicemail") m.transcript = chunkText(board.text);
-    // source reliability tag + subtle hint (Junior Analyst and up). Wrong outcomes arrive with the notebook in Step 4.
-    var RL = global.Reliability;
-    if (RL && def && (board.type === "trail" || board.type === "suspect") && (Number(ctx.rankLevel) || 1) >= RL.MIN_LEVEL) {
-      var side = sideRng(hashStr(String(board.id)));   // own stream: the inbox never disturbs the game's dice
-      var r = RL.roll(side, ctx.rankLevel, RL.sourceFor(board.focus || "locals", side));
-      m.reliability = r.tag; m.hint = r.hint;
-    } else if (!chief && (board.type === "hq" || board.type === "brief") && (Number(ctx.rankLevel) || 1) >= 3) m.reliability = "confirmed";
-    // crumpled note: the first scene detail of a case, and some "ask around" trail reports
+    if (channel === "call" || channel === "voicemail") m.transcript = chunkText(body);
+    // reliability tag + subtle hint ride on the trait report (Junior Analyst and up); a wrong claim is real, not decoration
+    if (board.reportId) {
+      var rep = (c.reports || []).filter(function (r) { return r.id === board.reportId; })[0];
+      if (rep && rep.shown) { m.reliability = rep.tag; m.hint = rep.hint; }
+      m.reportId = board.reportId;
+    }
+    // found physical scraps: the first scene detail, and some trail clues (never a word-for-word echo of the message)
     var CN = global.CrumpledNotes;
-    if (CN && !chief && ((board.type === "scene" && !c.noteMade) || (board.type === "trail" && (hashStr(String(board.id)) % 10) < 3))) {
+    if (CN && !chief && ((board.type === "scene" && !c.noteMade) || (board.type === "trail" && def && (hashStr(String(board.id)) % 10) < 3))) {
       if (board.type === "scene") c.noteMade = true;
       var clue = board.type === "trail" && board.stopIdx != null && c.stops[board.stopIdx] ? clueSentence(c.stops[board.stopIdx]) : board.text;
       m.visual = { kind: "note", note: CN.generate(c.id + ":" + board.id, clue) };
@@ -471,7 +573,9 @@
       visited: {},             // placeId -> true for route stops an agent reached
       contributors: {},        // agentId -> true for agents who gave useful on-scene reports
       ruledOut: {},            // placeId -> true (Guess Who? elimination)
-      uncovered: {},
+      uncovered: {},           // TRUTH ONLY (engine bookkeeping). The player's own notes live in c.notebook.
+      notebook: { traits: {} },// what the player has pinned: traitKey -> {category, clueText, reportId|null, tag, manual}
+      reports: [],             // every trait claim a source made: {id, traitKey, category, clueText, tag, hint, shown, truth}
       lineup: [],
       board: [],
       wrongTrips: 0,
@@ -496,7 +600,8 @@
       if (cl.tag !== "escalated" && cl.tag !== "cold") addBoard(c, ctx, { type: "scene", text: cl.text });
     });
     Object.keys(c.uncovered).forEach(function (k) {
-      addBoard(c, ctx, { type: "suspect", text: "Ring intel: the suspect has " + c.uncovered[k].clueText + ".", traitKey: k });
+      var rep = makeReport(c, ctx, k, { confirmed: true });
+      addBoard(c, ctx, { type: "suspect", text: "Ring intel: the suspect has " + rep.clueText + ".", traitKey: k, reportId: rep.id });
     });
 
     state.cases.push(c);
@@ -603,7 +708,7 @@
     }
     if (!fresh) {
       var key = uncoverTrait(c, ctx, false);
-      if (key) fresh = addBoard(c, ctx, { type: "suspect", traitKey: key, text: "HQ intercept: the suspect has " + c.uncovered[key].clueText + "." });
+      if (key) { var hrep = makeReport(c, ctx, key, { confirmed: true }); fresh = addBoard(c, ctx, { type: "suspect", traitKey: key, reportId: hrep.id, text: "HQ intercept: the suspect has " + hrep.clueText + "." }); }
     }
     events.push({ type: "escalated", caseId: c.id, text: "HQ intercept on \"" + c.title + "\": the suspect moved on, but a fresh clue came in." });
   }
@@ -770,9 +875,10 @@
         var lkey = uncoverTrait(c, ctx, true);
         if (lkey) {
           wantSuspect = false;
+          var lrep = makeReport(c, ctx, lkey, { confirmed: true });
           entries.push(addBoard(c, ctx, {
-            type: "lucky", special: true, agentId: a.id, traitKey: lkey,
-            text: "LUCKY BREAK! " + def.name + " spotted the one detail that matters: the suspect has " + c.uncovered[lkey].clueText + "!"
+            type: "lucky", special: true, agentId: a.id, traitKey: lkey, reportId: lrep.id,
+            text: "LUCKY BREAK! " + def.name + " spotted the one detail that matters: the suspect has " + lrep.clueText + "!"
           }));
         } else {
           lucky = false;
@@ -785,7 +891,7 @@
       stop.delivered = true;
       c.lead = idx + 1;
       c.stuck[idx] = false;
-      entries.push(addBoard(c, ctx, { type: "trail", agentId: a.id, stopIdx: idx + 1, focus: focus.id, long: longTrip, text: def.name + " reports from " + place.city + ": " + clueSentence(stop) }));
+      entries.push(addBoard(c, ctx, { type: "trail", agentId: a.id, stopIdx: idx + 1, focus: focus.id, long: longTrip, say: { city: place.city, clue: clueSentence(stop) }, text: def.name + " reports from " + place.city + ": " + clueSentence(stop) }));
     } else if (!isFinal && !c.stuck[idx] && !(c.lead != null && c.lead > idx)) {
       c.stuck[idx] = true; // no trail clue yet: the next orders here are guaranteed to get one
     }
@@ -793,15 +899,23 @@
     if (wantSuspect) {
       var key = uncoverTrait(c, ctx, false);
       if (key) {
-        entries.push(addBoard(c, ctx, { type: "suspect", agentId: a.id, traitKey: key, focus: focus.id, long: longTrip, text: def.name + " asked around in " + place.city + ": the suspect has " + c.uncovered[key].clueText + "." }));
+        // on "ask around" orders a nervous caller sometimes phones HQ instead: an anonymous tip (always a Rumour)
+        var tipRoll = sideRng(hashStr(c.id + ":tip:" + idx + ":" + c.reports.length))();
+        if (focus.id === "locals" && tipRoll < 0.25) {
+          var trep = makeReport(c, ctx, key, { tag: "rumour" });
+          entries.push(addBoard(c, ctx, { type: "suspect", anonymous: true, traitKey: key, reportId: trep.id, text: "An anonymous tip came in from " + place.city + ": the suspect has " + trep.clueText + "." }));
+        } else {
+          var rep = makeReport(c, ctx, key, { focus: focus.id });
+          entries.push(addBoard(c, ctx, { type: "suspect", agentId: a.id, traitKey: key, reportId: rep.id, focus: focus.id, long: longTrip, say: { city: place.city, clue: rep.clueText }, text: def.name + " asked around in " + place.city + ": the suspect has " + rep.clueText + "." }));
+        }
       }
     }
 
     if (isFinal) {
       c.suspectLocated = true;
-      entries.push(addBoard(c, ctx, { type: "located", agentId: a.id, text: def.name + " has a strong feeling the suspect is hiding right here in " + place.city + "!" }));
+      entries.push(addBoard(c, ctx, { type: "located", agentId: a.id, say: { city: place.city }, text: def.name + " has a strong feeling the suspect is hiding right here in " + place.city + "!" }));
     } else if (!entries.length) {
-      entries.push(addBoard(c, ctx, { type: "hq", agentId: a.id, text: def.name + " looked around " + place.city + " but nothing new yet. Try asking again." }));
+      entries.push(addBoard(c, ctx, { type: "hq", agentId: a.id, say: { city: place.city, nothing: true }, text: def.name + " looked around " + place.city + " but nothing new yet. Try asking again." }));
     }
 
     var CC = global.ChiefCalls;
@@ -845,6 +959,13 @@
     reset: reset,
     getCase: getCase,
     activeCases: activeCases,
+    makeReport: makeReport,
+    reportsFor: reportsFor,
+    pinReport: pinReport,
+    pinManual: pinManual,
+    unpin: unpin,
+    pinTruth: pinTruth,
+    traitOptions: traitOptions,
     addComm: addComm,
     allComms: allComms,
     unreadCounts: unreadCounts,

@@ -20,11 +20,11 @@ const mk = (seed, rankLevel, timeMode) => ({ now: T0, rng: seeded(seed), rankLev
   const ctx = mk(11, 1, "mission"), st = CE.newState(ctx), c = CE.createCase(st, ctx, {});
   ok(c.comms.length === c.board.length && c.comms.every((m, i) => m.boardId === c.board[i].id), "one comm per board entry");
   ok(c.comms.some(m => m.channel === "email" && m.subject === "New case file"), "case file arrives as an email");
-  ok(c.comms.filter(m => m.channel === "text").length >= 1, "scene reports are texts");
+  ok(c.comms.filter(m => m.channel === "text").length === 0 && c.comms.filter(m => m.subject === "Scene notes").every(m => m.channel === "email"), "scene notes are emails; texts only come from known contacts");
   ok(c.comms.every(m => m.state === "new" && m.lock === null), "new, unlocked (locks only come from registered minigames)");
   ok(c.comms.every(m => m.reliability === null && m.hint === null), "Recruit sees no reliability tags or hints");
-  ok(c.comms.filter(m => m.visual).length === 1 && c.comms.find(m => m.visual).visual.kind === "note", "one crumpled note on the scene report");
-  const u = CE.unreadCounts(st); ok(u.all === c.comms.length && u.email >= 1 && u.text >= 1 && u.call === 0 && u.voicemail === 0, "unread counts by channel");
+  ok(c.comms.filter(m => m.visual).length === 1 && c.comms.find(m => m.visual).visual.kind === "note", "one found scrap on the scene notes");
+  const u = CE.unreadCounts(st); ok(u.all === c.comms.length && u.email >= 1 && u.call === 0 && u.voicemail === 0, "unread counts by channel");
   c.comms[0].state = "read"; ok(CE.unreadCounts(st).all === c.comms.length - 1, "reading drops the count");
   ok(JSON.stringify(JSON.parse(JSON.stringify(st))) === JSON.stringify(st), "comms survive a JSON round trip");
   ok(CE.allComms(st).length === c.comms.length, "allComms flattens across cases");
@@ -50,6 +50,7 @@ function playOrders(seed, level, mode, speed, focus) {
   let sawVm = 0, sawTag = 0, sawHint = 0, sawText = 0;
   for (let s = 1; s <= 80; s++) {
     const x = playOrders(s, 4, "mission", 1, ["transit", "locals", "records"][s % 3]);
+    ok(x.c.comms.filter(m => m.clueRef.type === "trail").every(m => m.reliability === null), "trail clues carry no reliability tag");
     for (const m of x.c.comms.filter(m => m.from.kind === "agent")) {
       if (m.channel === "voicemail") { sawVm++; ok(m.transcript && m.transcript.length >= 1, "voicemail has a chunked transcript"); }
       if (m.channel === "text") sawText++;
@@ -88,16 +89,18 @@ function playOrders(seed, level, mode, speed, focus) {
   ok(held > 0, "mission time: milestones queued instead");
 }
 
-// ---- crumpled notes
+// ---- crumpled notes: found scraps, not a copy of the message
 {
-  const clue = "paid for a snack with Argentine peso and left a ticket stub behind";
+  const clue = "Someone who met the suspect says they paid for a snack with Argentine peso and left a ticket stub behind.";
   const a = CN.generate("k1", clue), b = CN.generate("k1", clue), c2 = CN.generate("k2", clue);
   ok(JSON.stringify(a) === JSON.stringify(b), "same key, same note"); ok(JSON.stringify(a) !== JSON.stringify(c2), "different key, different note");
+  const kinds = new Set(); for (let i = 0; i < 60; i++) kinds.add(CN.generate("kk" + i, clue).kind); ok(kinds.size >= 4, "several kinds of scrap: " + [...kinds].join(","));
   const words = a.lines.flat(), sm = words.filter(w => w.smudged).length;
-  ok(words.map(w => w.t).join(" ") === clue, "words preserved in order"); ok(sm <= Math.floor(words.length * 0.3), "smudges capped at 30%");
-  ok(words.some(w => !w.smudged && w.t.length > 3), "a key word always stays readable");
+  ok(sm <= Math.floor(words.length * 0.3), "smudges capped at 30%");
+  ok(words.some(w => w.key && !w.smudged), "a key word always stays readable"); ok(words.filter(w => w.key).every(w => !w.smudged), "key words are never smudged");
+  ok(a.keys.length >= 1 && a.keys.every(k => clue.toLowerCase().includes(k.toLowerCase())), "key words come from the clue");
   const places = WF.PLACES.flatMap(p => [p.city, p.country]).map(x => x.toLowerCase());
-  for (let s = 0; s < 200; s++) { const nt = CN.plain(CN.generate("s" + s, "A scribbled note with night train times was found near the tracks.")).toLowerCase(); ok(!places.some(p => nt.includes(p)), "no place names in a note"); }
+  for (let s = 0; s < 200; s++) { const nt = CN.plain(CN.generate("s" + s, "A scribbled note with night train times was found near the tracks.")).toLowerCase(); ok(!places.some(p => nt.includes(p)), "no place names in a note"); ok(!nt.includes("scribbled note with night train times"), "never echoes the sentence"); }
   ok(CN.FLAVOUR.every(f => !places.some(p => f.toLowerCase().includes(p))), "flavour scraps are place-free");
   ok(a.folds.length >= 4 && ["#E9DFC4", "#DCE3E6", "#EFE2A8", "#E4D5D0"].includes(a.tone), "paper has folds and a tone");
 }

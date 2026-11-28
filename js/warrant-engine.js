@@ -36,11 +36,11 @@
 
   // ------------------------------------------------------------------ warrant terminal
 
-  // Lineup members that match EVERY trait uncovered so far.
+  // Lineup members that match EVERY trait the player has pinned in her notebook (never the hidden truth).
   function matchingLineup(c) {
-    var keys = Object.keys(c.uncovered);
+    var pins = (c.notebook && c.notebook.traits) || {}, keys = Object.keys(pins);
     return c.lineup.filter(function (s) {
-      return keys.every(function (k) { return s.traits[k] && s.traits[k].category === c.uncovered[k].category; });
+      return keys.every(function (k) { return s.traits[k] && s.traits[k].category === pins[k].category; });
     });
   }
 
@@ -202,6 +202,8 @@
     }
     var unlocked = CE().syncRoster(state, unlockCtx).map(function (d) { return d.id; });
 
+    state.caught = state.caught || {};
+    state.caught[c.suspect.id] = (state.caught[c.suspect.id] || 0) + 1;
     var stolen = c.crime.target.name + " in " + global.WorldFactbook.findPlace(c.route[0]).city;
     c.summary = {
       headline: c.isLeaderCase ? "Ring Leader behind bars!" : "Case solved!",

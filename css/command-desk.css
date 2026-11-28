@@ -133,3 +133,19 @@ h1, h2 { margin:0 0 6px; } h2 { font-size:17px; } h1 { font-size:22px; }
 .note-flavour { margin-top:8px; font-size:14px; opacity:.7; transform:rotate(-2deg); }
 .seg button { position:relative; }
 .chipbtn { padding:0 10px; font-size:12px; } .row > .chipbtn .badge-n { margin-left:4px; }
+
+/* Step 4: comms drawer, caller id, dossier, note kinds */
+.drawer { position:fixed; top:0; right:0; bottom:0; width:min(440px,92vw); background:var(--card); border-left:2px solid var(--pink); z-index:30; display:none; flex-direction:column; box-shadow:-10px 0 30px rgba(0,0,0,.5); }
+.drawer.open { display:flex; } .drawer-h { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px solid var(--line); } .drawer-h h2 { margin:0; font-size:20px; }
+.drawer-h .btn, .pickbtn { min-height:44px; min-width:44px; } .drawer-b { flex:1; overflow-y:auto; padding:12px; }
+.mbodytxt.email { white-space:pre-line; background:var(--card2); border-radius:10px; padding:12px; font-size:15px; line-height:1.5; }
+.mbodytxt.chat { background:#2b3f6e; border-radius:18px 18px 18px 4px; padding:12px 14px; font-size:17px; max-width:92%; }
+.ring.anon { border-color:var(--gold); } .ring-t span { font-size:12px; }
+.trow { margin-bottom:6px; } .trow .trait { min-height:44px; width:100%; text-align:left; display:flex; gap:8px; align-items:center; justify-content:space-between; border:1px solid var(--line); }
+.trow { display:flex; flex-wrap:wrap; gap:6px; } .trow .trait { flex:1; width:auto; } .picker { flex-basis:100%; display:flex; flex-direction:column; gap:6px; padding:6px; background:var(--card2); border-radius:12px; }
+.pickbtn { display:flex; flex-wrap:wrap; gap:6px; align-items:center; text-align:left; padding:8px 12px; border-radius:12px; border:1px solid var(--line); background:var(--card); } .pickbtn.alt { border-style:dashed; }
+.mug { display:inline-block; flex:none; border-radius:12px; overflow:hidden; border:2px solid var(--line); } .mug svg { width:100%; height:100%; display:block; }
+.dossier .fb-row { margin-top:4px; }
+.note-ticket { background:#E9DDB8; color:#2b2416; border-radius:4px; border-right:3px dashed #a8987060; padding-right:26px; }
+.note-schedule { background:#F1EFE6; color:#1d2b3a; background-image:repeating-linear-gradient(transparent 0 27px,#9bb3d055 27px 28px); }
+.note-jotting { background:#F7E98E; color:#2b2416; } .note-reminder { background:#FFD9E6; color:#3a1d2b; } .note-receipt { background:#FAFAF5; color:#222; font-family:ui-monospace,monospace; max-width:260px; clip-path:polygon(0 0,100% 0,100% calc(100% - 6px),95% 100%,90% calc(100% - 6px),85% 100%,80% calc(100% - 6px),75% 100%,70% calc(100% - 6px),65% 100%,60% calc(100% - 6px),55% 100%,50% calc(100% - 6px),45% 100%,40% calc(100% - 6px),35% 100%,30% calc(100% - 6px),25% 100%,20% calc(100% - 6px),15% 100%,10% calc(100% - 6px),5% 100%,0 calc(100% - 6px)); }

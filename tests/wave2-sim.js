@@ -120,6 +120,7 @@ function playFull(s, rank, mode) {
       const o = CE.giveOrders(st, ctx, { caseId: c.id, agentId: ag.id, focus: ["transit", "locals", "records"][tries % 3] });
       ok(o.ok, "orders accepted");
       if (o.lucky) lucky += 1;
+      CE.pinTruth(c); // a perfect note-taker: the engine tests exercise the warrant rules, the notebook has its own tests
       const done = i === c.route.length - 1 ? (WE.matchingLineup(c).length <= 2 || tries >= 6) : c.stops[i + 1].delivered;
       if (done) break;
     }
@@ -127,12 +128,13 @@ function playFull(s, rank, mode) {
   }
   const finalAgent = Object.values(st.agents).find((a) => a.stationPlaceId === c.route[c.route.length - 1] && a.status === "idle");
   ok(!!finalAgent, "an agent is waiting at the suspect's city");
+  CE.pinTruth(c);
   const matches = WE.matchingLineup(c);
-  ok(matches.some((m) => m.id === c.suspect.id), "true suspect still matches uncovered traits");
+  ok(matches.some((m) => m.id === c.suspect.id), "true suspect still matches the pinned traits");
 
   if (mode === "no-matches") {
     const fake = Object.keys(c.uncovered)[0];
-    c.uncovered[fake] = { category: "__none__", clueText: "x" };
+    c.notebook.traits[fake] = { category: "__none__", clueText: "x" };
     ok(WE.printWarrant(st, ctx, c.id, c.suspect.id).reason === "no-match", "printing blocked on 0 matches");
     return { c, st, ctx };
   }

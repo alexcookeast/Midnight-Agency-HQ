@@ -199,13 +199,15 @@ ok("cases: route/clue/decoy/lineup size scale with rank; every decoy can be elim
   // uncover traits one by one until the filter narrows
   const wrongSuspect = c.lineup.find(s => s.id !== c.suspect.id);
   for (let i = 0; i < 7; i++) CE.uncoverTrait(c, ctx, true);
+  assert.equal(WE.matchingLineup(c).length, c.lineup.length, "uncovered truth alone does not filter: only the notebook does");
+  CE.pinTruth(c);
   const matches = WE.matchingLineup(c);
   assert(matches.some(s => s.id === c.suspect.id)); assert(matches.length >= 1);
   // fake a 0-match scenario: corrupt an uncovered trait to something no one has
-  c.uncovered.hairColor = { category: "__none__", clueText: "x" };
+  c.notebook.traits.hairColor = { category: "__none__", clueText: "x" };
   r = WE.printWarrant(st, ctx, c.id, c.suspect.id);
   assert.equal(r.ok, false); assert.equal(r.reason, "no-match", "printing blocked on 0 matches");
-  c.uncovered.hairColor = c.suspect.traits.hairColor;
+  CE.pinTruth(c);
   r = WE.printWarrant(st, ctx, c.id, c.suspect.id);
   assert(r.ok); assert.equal(c.warrant.suspectId, c.suspect.id);
   ok("warrant terminal: blocked on 0 matches, can attach one filtered suspect");

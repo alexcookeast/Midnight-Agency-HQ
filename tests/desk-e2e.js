@@ -42,21 +42,37 @@ let n = 0; const ok = (c, m) => { assert(c, m); n++; };
   await page.reload(); await page.waitForSelector(".chip >> text=Real time"); ok(true, "desk shows the real-time chip");
   await page.evaluate(() => MidnightAgencyConfig.write({ timeMode: "mission" }));
   // ---- Step 3: comms inbox, incoming Chief call, waveform, note, 44px targets
-  await page.goto(U + "player-dashboard.html?dev=1&speed=30"); await page.waitForSelector(".seg button >> text=Comms");
-  ok(await page.locator(".seg button:has-text('Comms') .badge-n").count() === 1, "Comms tab shows an unread badge");
-  await page.click(".seg button:has-text('Comms')");
-  for (const k of ["All", "Calls", "Emails", "Texts", "Voicemails"]) ok(await page.locator(".chipbtn", { hasText: new RegExp("^" + k) }).count() === 1, "folder " + k);
-  for (const sel of [".chipbtn", ".mrow", ".seg button"]) for (const el of await page.locator(sel).all()) { const bx = await el.boundingBox(); if (bx) ok(bx.height >= 44, sel + " tall enough: " + Math.round(bx.height)); }
-  await page.click(".mrow >> nth=-1"); await page.waitForSelector(".sheet");
-  ok(await page.locator(".note").count() >= 0, "detail sheet opens");
-  await page.click(".sheet >> text=Close");
+  await page.goto(U + "player-dashboard.html?dev=1&speed=30"); await page.waitForSelector("#commsBtn");
+  ok(/\(\d+\)/.test(await page.locator("#commsBtn").textContent()), "Comms button shows an unread count");
+  ok(await page.locator(".seg button:has-text('Comms')").count() === 0, "no scattered Comms tab on the desk strip");
+  await page.click("#commsBtn"); await page.waitForSelector(".drawer.open");
+  for (const k of ["All", "Calls", "Emails", "Texts", "Voicemails"]) ok(await page.locator(".drawer .chipbtn", { hasText: new RegExp("^" + k) }).count() === 1, "folder " + k);
+  for (const sel of [".drawer .chipbtn", ".drawer .mrow", ".drawer-h .btn", "#commsBtn", ".seg button"]) for (const el of await page.locator(sel).all()) { const bx = await el.boundingBox(); if (bx) ok(bx.height >= 44, sel + " tall enough: " + Math.round(bx.height)); }
+  await page.click(".drawer .mrow >> nth=-1"); await page.waitForSelector(".drawer-b .mute");
+  ok(await page.locator(".drawer-h >> text=Back").count() === 1, "detail view inside the drawer with a back button");
+  await page.click(".drawer-h >> text=Back"); ok(await page.locator(".drawer .mrow").count() >= 1, "back to the list");
+  await page.click(".drawer-h .btn >> nth=-1"); ok(await page.locator(".drawer.open").count() === 0, "drawer closes");
+  // anonymous tip shows an Unknown caller pop-up
+  await page.evaluate(() => { const D = window.__desk, st = D.state(), c = st.cases[0]; c.comms = c.comms || []; c.comms.push({ id: "anon-e2e", channel: "call", state: "new", at: Date.now(), from: { id: "informant", name: "Anonymous", kind: "informant" }, subject: "A tip", body: "Psst. Check the harbour.", transcript: ["Psst.", "Check the harbour."], callerId: { label: "Unknown caller", sub: "", anonymous: true }, reliability: "rumour", hint: "Sounds unsure." }); CaseEngine.save(st); });
+  await page.waitForSelector(".ring.anon", { timeout: 4000 }); ok(/Unknown caller/.test(await page.locator(".ring").textContent()) && /anonymous tip/i.test(await page.locator(".ring").textContent()), "anonymous caller id pop-up");
+  await page.click(".ring >> text=Answer"); await page.waitForSelector(".drawer canvas.wave"); ok(await page.locator(".drawer >> text=Anonymous tip").count() >= 1, "answering opens the tip with an Anonymous tip label");
+  await page.evaluate(() => { CommsAudio.stop(); }); await page.click(".drawer-h .btn >> nth=-1");
+  // dossier: manual notebook, nothing auto-filled
+  await page.click(".seg button:has-text('Dossier')"); await page.waitForSelector("[data-trait]");
+  ok(await page.locator(".trait.known").count() === 0, "notebook starts blank");
+  await page.click("[data-trait=build]"); await page.click(".picker .pickbtn.alt >> nth=0");
+  ok(await page.locator(".trait.known").count() === 1, "manual pin fills one row");
+  for (const el of await page.locator(".trow .trait, .sus").all()) { const bx = await el.boundingBox(); if (bx) ok(bx.height >= 44, "dossier target 44px+"); }
+  ok(await page.locator(".sus .mug svg").count() >= 1, "suspect mugshots drawn");
+  await page.click(".sus >> nth=0"); ok(await page.locator(".dossier").count() === 1, "selected suspect shows a dossier card");
+  await page.click(".trow .btn >> nth=0"); ok(await page.locator(".trait.known").count() === 0, "clearing a clue works");
   // a Chief call rings straight away in real time
   await page.evaluate(() => { MidnightAgencyConfig.write({ timeMode: "real" }); });
-  await page.reload(); await page.waitForSelector(".seg button >> text=Comms");
+  await page.reload(); await page.waitForSelector("#commsBtn");
   await page.evaluate(() => { const D = window.__desk, st = D.state(), c = st.cases[0], ctx = D.ctx(); ChiefCalls.award(st, c, ctx, "lucky"); CaseEngine.save(st); });
   await page.waitForSelector(".ring", { timeout: 4000 }); ok(/The Chief/.test(await page.locator(".ring").textContent()), "incoming call banner from the Chief");
   for (const el of await page.locator(".ring .btn").all()) { const bx = await el.boundingBox(); ok(bx.height >= 44 && bx.width >= 44, "ring buttons 44px+"); }
-  await page.click(".ring >> text=Answer"); await page.waitForSelector("canvas.wave");
+  await page.click(".ring >> text=Answer"); await page.waitForSelector(".drawer canvas.wave");
   await page.waitForTimeout(1200);
   ok(await page.locator(".tchunk.now, .tchunk.said").count() >= 1, "live transcript advances while the call plays");
   const px = await page.evaluate(() => { const c = document.querySelector("canvas.wave"), d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n; });
