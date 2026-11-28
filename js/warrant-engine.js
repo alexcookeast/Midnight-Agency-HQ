@@ -52,6 +52,7 @@
     var pick = matches.filter(function (s) { return s.id === suspectId; })[0];
     if (!pick) return { ok: false, reason: "not-a-match" };
     c.warrant = { suspectId: pick.id, name: pick.displayName, issuedAt: ctx.now, gamble: matches.length > 1 };
+    if (global.ChiefCalls) global.ChiefCalls.award(state, c, ctx, "warrant");
     return { ok: true, warrant: c.warrant, gamble: c.warrant.gamble, matches: matches.length };
   }
 
@@ -226,6 +227,10 @@
       timeTakenMs: ctx.now - c.createdAt
     };
 
+    if (global.ChiefCalls) {
+      var solvedNow = cfg && cfg.read ? (cfg.read().player.solved || 0) : (state.stats.solved || 0);
+      global.ChiefCalls.wrapUp(state, c, ctx, c.summary, solvedNow);
+    }
     return { ok: true, outcome: "clean", text: c.summary.headline, summary: c.summary };
   }
 

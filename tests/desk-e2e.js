@@ -26,7 +26,7 @@ let n = 0; const ok = (c, m) => { assert(c, m); n++; };
   await page.mouse.click(br.x + br.width * 0.45, br.y + br.height * 0.4); await page.waitForSelector(".fb-head h1");
   ok((await page.locator(".fb-head h1").textContent()) === "Brazil", "tapping Brazil opens its Factbook entry");
   await page.click("text=Field notes"); ok(await page.locator(".fb-item").count() >= 3, "field notes tab lists spycraft entries");
-  await page.click("text=Close");
+  await page.click(".sheet >> text=Close");
   // tap a city -> card, intel, send agent -> moving marker with legs
   const d = await page.locator('.cm-pin[data-place="london"] .cm-dot').boundingBox(); await page.mouse.click(d.x + 6, d.y + 6);
   await page.waitForSelector(".cm-card"); ok((await page.locator(".ic-city").textContent()) === "London", "city tap fills the intel card");
@@ -41,6 +41,28 @@ let n = 0; const ok = (c, m) => { assert(c, m); n++; };
   ok(real > mission * 2, "real time is much longer than mission time: " + mission + " vs " + real);
   await page.reload(); await page.waitForSelector(".chip >> text=Real time"); ok(true, "desk shows the real-time chip");
   await page.evaluate(() => MidnightAgencyConfig.write({ timeMode: "mission" }));
+  // ---- Step 3: comms inbox, incoming Chief call, waveform, note, 44px targets
+  await page.goto(U + "player-dashboard.html?dev=1&speed=30"); await page.waitForSelector(".seg button >> text=Comms");
+  ok(await page.locator(".seg button:has-text('Comms') .badge-n").count() === 1, "Comms tab shows an unread badge");
+  await page.click(".seg button:has-text('Comms')");
+  for (const k of ["All", "Calls", "Emails", "Texts", "Voicemails"]) ok(await page.locator(".chipbtn", { hasText: new RegExp("^" + k) }).count() === 1, "folder " + k);
+  for (const sel of [".chipbtn", ".mrow", ".seg button"]) for (const el of await page.locator(sel).all()) { const bx = await el.boundingBox(); if (bx) ok(bx.height >= 44, sel + " tall enough: " + Math.round(bx.height)); }
+  await page.click(".mrow >> nth=-1"); await page.waitForSelector(".sheet");
+  ok(await page.locator(".note").count() >= 0, "detail sheet opens");
+  await page.click(".sheet >> text=Close");
+  // a Chief call rings straight away in real time
+  await page.evaluate(() => { MidnightAgencyConfig.write({ timeMode: "real" }); });
+  await page.reload(); await page.waitForSelector(".seg button >> text=Comms");
+  await page.evaluate(() => { const D = window.__desk, st = D.state(), c = st.cases[0], ctx = D.ctx(); ChiefCalls.award(st, c, ctx, "lucky"); CaseEngine.save(st); });
+  await page.waitForSelector(".ring", { timeout: 4000 }); ok(/The Chief/.test(await page.locator(".ring").textContent()), "incoming call banner from the Chief");
+  for (const el of await page.locator(".ring .btn").all()) { const bx = await el.boundingBox(); ok(bx.height >= 44 && bx.width >= 44, "ring buttons 44px+"); }
+  await page.click(".ring >> text=Answer"); await page.waitForSelector("canvas.wave");
+  await page.waitForTimeout(1200);
+  ok(await page.locator(".tchunk.now, .tchunk.said").count() >= 1, "live transcript advances while the call plays");
+  const px = await page.evaluate(() => { const c = document.querySelector("canvas.wave"), d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) n++; return n; });
+  ok(px > 200, "waveform is drawn: " + px + " px");
+  await page.evaluate(() => { CommsAudio.stop(); });
+  await page.evaluate(() => { MidnightAgencyConfig.write({ timeMode: "mission" }); });
   // classic phrasebook page loads and has no free-star taps
   await page.goto(U + "hq-classic.html?dev=1"); await page.waitForTimeout(500); ok(await page.locator("#phraseIn").count() === 1, "phrasebook page still works");
   // GM suite

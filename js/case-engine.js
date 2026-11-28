@@ -80,6 +80,7 @@
     var l = rankLevelOf(ctx);
     return l <= 2 ? 1 : (l <= 4 ? 2 : 3);
   }
+  var MIN_MS_CE = 60000;
   function uid(prefix, rng) { return prefix + "-" + Date.now().toString(36) + "-" + Math.floor(rng() * 100000).toString(36); }
 
   // ------------------------------------------------------------------ place facts for clues
@@ -362,7 +363,65 @@
   function addBoard(c, ctx, entry) {
     var e = Object.assign({ id: uid("b", rngOf(ctx)), at: ctx.now }, entry);
     c.board.push(e);
+    addComm(c, ctx, e);          // the inbox is the same events, as emails / texts / calls / voicemails
     return e;
+  }
+
+  // ------------------------------------------------------------------ comms inbox (Wave 3)
+  var CHANNEL_BY_TYPE = { brief: "email", hq: "email", scene: "text", trail: "text", suspect: "text", deadend: "text", located: "text", lucky: "call" };
+  var SUBJECT_BY_TYPE = { brief: "New case file", hq: "HQ update", scene: "Scene report", trail: "Trail clue", suspect: "Suspect detail", deadend: "Dead end", located: "Suspect located", lucky: "Lucky break" };
+  function hashStr(s) { var h = 2166136261; for (var i = 0; i < s.length; i += 1) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function sideRng(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function chunkText(text) {
+    var parts = String(text).replace(/\s+/g, " ").match(/[^.!?;:]+[.!?;:]*/g) || [String(text)];
+    return parts.map(function (p) { return p.trim(); }).filter(Boolean);
+  }
+
+  // One creation point for the inbox. board = the c.board entry (or a Chief call descriptor).
+  function addComm(c, ctx, board) {
+    c.comms = c.comms || [];
+    var AR = global.AgentRoster, def = board.agentId && AR ? AR.byId(board.agentId) : null;
+    var chief = !!board.chief, channel = board.channel || CHANNEL_BY_TYPE[board.type] || "text";
+    if (!board.channel && board.long && (board.type === "trail" || board.type === "suspect" || board.type === "located")) channel = "voicemail";
+    var CC = global.ChiefCalls;
+    var from = chief ? { kind: "hq", id: "chief", name: "The Chief" } : def ? { kind: "agent", id: def.id, name: def.name, badge: def.badge } : { kind: "hq", name: "HQ" };
+    var voice = chief && CC ? CC.CHIEF.voice : def ? { pitch: def.voice.pitch, rate: def.voice.rate } : { pitch: 1, rate: 1 };
+    var m = {
+      id: "m-" + c.id + "-" + (c.commSeq = (c.commSeq || 0) + 1), boardId: board.id, caseId: c.id, at: ctx.now, channel: channel, from: from,
+      subject: chief ? "Message from the Chief" : (SUBJECT_BY_TYPE[board.type] || "Report"),
+      body: board.text, voice: voice, state: "new", lock: null,
+      clueRef: { type: board.type === "trail" || board.type === "lucky" && board.stopIdx != null ? "trail" : board.traitKey ? "suspect" : "flavor", stopIdx: board.stopIdx, traitKey: board.traitKey },
+      reliability: null, hint: null, visual: null
+    };
+    if (channel === "call" || channel === "voicemail") m.transcript = chunkText(board.text);
+    // source reliability tag + subtle hint (Junior Analyst and up). Wrong outcomes arrive with the notebook in Step 4.
+    var RL = global.Reliability;
+    if (RL && def && (board.type === "trail" || board.type === "suspect") && (Number(ctx.rankLevel) || 1) >= RL.MIN_LEVEL) {
+      var side = sideRng(hashStr(String(board.id)));   // own stream: the inbox never disturbs the game's dice
+      var r = RL.roll(side, ctx.rankLevel, RL.sourceFor(board.focus || "locals", side));
+      m.reliability = r.tag; m.hint = r.hint;
+    } else if (!chief && (board.type === "hq" || board.type === "brief") && (Number(ctx.rankLevel) || 1) >= 3) m.reliability = "confirmed";
+    // crumpled note: the first scene detail of a case, and some "ask around" trail reports
+    var CN = global.CrumpledNotes;
+    if (CN && !chief && ((board.type === "scene" && !c.noteMade) || (board.type === "trail" && (hashStr(String(board.id)) % 10) < 3))) {
+      if (board.type === "scene") c.noteMade = true;
+      var clue = board.type === "trail" && board.stopIdx != null && c.stops[board.stopIdx] ? clueSentence(c.stops[board.stopIdx]) : board.text;
+      m.visual = { kind: "note", note: CN.generate(c.id + ":" + board.id, clue) };
+    }
+    c.comms.push(m);
+    if (c.comms.length > 60) c.comms.splice(0, c.comms.length - 60);
+    return m;
+  }
+
+  function allComms(state) {
+    var out = [];
+    state.cases.forEach(function (c) { (c.comms || []).forEach(function (m) { out.push(m); }); });
+    return out.sort(function (a, b) { return b.at - a.at; });
+  }
+  function unreadCounts(state) {
+    var n = { all: 0, call: 0, email: 0, text: 0, voicemail: 0 };
+    allComms(state).forEach(function (m) { if (m.state === "new") { n.all += 1; n[m.channel] += 1; } });
+    return n;
   }
 
   // opts: { ringId, tier, isLeaderCase, intelFragments, suspect (light), rankLevel override }
@@ -688,6 +747,7 @@
     c.progress = Math.max(c.progress, idx);
     c.contributors[a.id] = true;
 
+    var longTrip = !!(a.assignment && (a.assignment.arrivalTime - a.assignment.departureTime) * (Number(ctx.timeScale) || 1) >= 60 * MIN_MS_CE);
     var wantTrail = !isFinal && (rng() < odds.trail || c.stuck[idx]);
     var wantSuspect = rng() < (isFinal ? Math.max(odds.suspect, 0.75) : odds.suspect);
     if (focus.id === "records" && !isFinal && !wantTrail && !wantSuspect) wantTrail = true; // never an empty report
@@ -725,7 +785,7 @@
       stop.delivered = true;
       c.lead = idx + 1;
       c.stuck[idx] = false;
-      entries.push(addBoard(c, ctx, { type: "trail", agentId: a.id, stopIdx: idx + 1, text: def.name + " reports from " + place.city + ": " + clueSentence(stop) }));
+      entries.push(addBoard(c, ctx, { type: "trail", agentId: a.id, stopIdx: idx + 1, focus: focus.id, long: longTrip, text: def.name + " reports from " + place.city + ": " + clueSentence(stop) }));
     } else if (!isFinal && !c.stuck[idx] && !(c.lead != null && c.lead > idx)) {
       c.stuck[idx] = true; // no trail clue yet: the next orders here are guaranteed to get one
     }
@@ -733,7 +793,7 @@
     if (wantSuspect) {
       var key = uncoverTrait(c, ctx, false);
       if (key) {
-        entries.push(addBoard(c, ctx, { type: "suspect", agentId: a.id, traitKey: key, text: def.name + " asked around in " + place.city + ": the suspect has " + c.uncovered[key].clueText + "." }));
+        entries.push(addBoard(c, ctx, { type: "suspect", agentId: a.id, traitKey: key, focus: focus.id, long: longTrip, text: def.name + " asked around in " + place.city + ": the suspect has " + c.uncovered[key].clueText + "." }));
       }
     }
 
@@ -744,6 +804,12 @@
       entries.push(addBoard(c, ctx, { type: "hq", agentId: a.id, text: def.name + " looked around " + place.city + " but nothing new yet. Try asking again." }));
     }
 
+    var CC = global.ChiefCalls;
+    if (CC) {
+      if (entries.some(function (e) { return e.type === "trail"; })) CC.award(state, c, ctx, "firstTrail");
+      if (entries.some(function (e) { return e.type === "lucky"; })) CC.award(state, c, ctx, "lucky");
+      if (isFinal) CC.award(state, c, ctx, "located");
+    }
     a.assignment.arrived = true;
     a.status = "idle";       // free to move; still stationed at this city
     a.assignment = null;
@@ -779,6 +845,9 @@
     reset: reset,
     getCase: getCase,
     activeCases: activeCases,
+    addComm: addComm,
+    allComms: allComms,
+    unreadCounts: unreadCounts,
     currentRouteIds: currentRouteIds,
     syncRoster: syncRoster,
     createCase: createCase,

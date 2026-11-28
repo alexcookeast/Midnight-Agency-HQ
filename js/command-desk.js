@@ -14,7 +14,8 @@
   var HQ = { lat: 45.27, lon: -66.06, city: "Saint John" };    // player's home base, map pin only
 
   var roster = null, countries = {}, state = null, map = null, intel = null, intelKey = null;
-  var view = { caseId: null, tab: "board", selected: null, facts: {}, dismissed: {}, mapPlace: null };
+  var view = { caseId: null, tab: "board", selected: null, facts: {}, dismissed: {}, mapPlace: null, chan: "all", ringed: {} };
+  var CA = window.CommsAudio, CN = window.CrumpledNotes;
   var soundOn = readSound();
 
   // ------------------------------------------------------------------ helpers
@@ -382,6 +383,7 @@
     if (!view.mapPlace && c) { var sp = place(c.route[Math.max(0, c.progress)]); if (sp) setIntel(sp); }
     if (!view.mapPlace && !c) setIntel(null);
     pushMap();
+    if (state) checkIncoming(false);
   }
   function renderBar() {
     var p = MA.read().player, trust = Math.max(0, Math.min(5, Number(p.trust)));
@@ -427,13 +429,91 @@
     ]);
   }
   function renderSide(c) {
-    var tabs = el("div", { class: "seg" }, [["board", "Country board"], ["agents", "Agents"], ["warrant", "Warrant"], ["labs", "Labs"]].map(function (t) {
-      return el("button", { class: view.tab === t[0] ? "on" : "", on: { click: function () { view.tab = t[0]; render(); } } }, t[1]);
+    var tabs = el("div", { class: "seg" }, [["board", "Board"], ["agents", "Agents"], ["warrant", "Warrant"], ["comms", "Comms"], ["labs", "Labs"]].map(function (t) {
+      var unread = t[0] === "comms" ? CE.unreadCounts(state).all : 0;
+      return el("button", { class: view.tab === t[0] ? "on" : "", on: { click: function () { view.tab = t[0]; render(); } } }, [t[1], unread ? el("span", { class: "badge-n", "aria-label": unread + " unread" }, unread) : null]);
     }));
-    var body = view.tab === "labs" ? renderLabs() : !c ? el("div", { class: "mute", style: "padding:10px" }, "Take a case to use the board, agents and warrant.") :
+    var body = view.tab === "labs" ? renderLabs() : view.tab === "comms" ? renderComms() : !c ? el("div", { class: "mute", style: "padding:10px" }, "Take a case to use the board, agents and warrant.") :
       view.tab === "agents" ? renderAgents(c) : view.tab === "warrant" ? renderWarrant(c) : renderBoard(c);
     return el("div", { class: "colfill" }, [tabs, el("div", { class: "scroll", style: "flex:1" }, body)]);
   }
+  // ------------------------------------------------------------------ comms inbox
+  var CH_LABEL = { all: "All", call: "Calls", email: "Emails", text: "Texts", voicemail: "Voicemails" };
+  var CH_ICON = { call: "📞", email: "✉️", text: "💬", voicemail: "📼" };
+  var REL_LABEL = { confirmed: "Confirmed", witness: "Witness", rumour: "Rumour" };
+  function ago(at) { var m = Math.max(0, Math.round((Date.now() - at) / 60000)); return m < 1 ? "now" : m < 60 ? m + " min" : Math.round(m / 60) + " h"; }
+  function snippet(t) { t = String(t || ""); return t.length > 70 ? t.slice(0, 67) + "…" : t; }
+  function renderComms() {
+    var counts = CE.unreadCounts(state), all = CE.allComms(state);
+    var chips = el("div", { class: "row", style: "margin-bottom:8px" }, Object.keys(CH_LABEL).map(function (k) {
+      return el("button", { class: "chipbtn" + (view.chan === k ? " on" : ""), on: { click: function () { view.chan = k; render(); } } }, [CH_LABEL[k], counts[k] ? el("span", { class: "badge-n" }, counts[k]) : null]);
+    }));
+    var list = all.filter(function (m) { return view.chan === "all" || m.channel === view.chan; });
+    var rows = list.slice(0, 40).map(function (m) {
+      return el("button", { class: "mrow" + (m.state === "new" ? " unread" : ""), on: { click: function () { openComm(m); } } }, [
+        el("span", { class: "mico" }, CH_ICON[m.channel]),
+        el("span", { class: "mbody" }, [
+          el("b", null, (m.from.id === "chief" ? "🎖️ " : m.from.badge ? m.from.badge + " " : "") + m.from.name + " · " + m.subject),
+          el("span", { class: "mute" }, snippet(m.body))
+        ]),
+        el("span", { class: "mmeta" }, [ago(m.at), m.reliability && m.reliability !== "confirmed" ? el("span", { class: "rel rel-" + m.reliability }, REL_LABEL[m.reliability]) : null])
+      ]);
+    });
+    return [chips, rows.length ? rows : el("div", { class: "mute", style: "padding:10px" }, all.length ? "Nothing in this folder." : "No messages yet. Reports from your agents and the Chief land here.")];
+  }
+  function markRead(m) { if (m.state === "new") { m.state = "read"; save(); } }
+  function openComm(m) {
+    markRead(m);
+    var voice = m.channel === "call" || m.channel === "voicemail";
+    var transcript = voice ? el("div", { class: "transcript", "aria-live": "polite" }, (m.transcript || [m.body]).map(function (t, i) { return el("span", { class: "tchunk", "data-i": i }, t + " "); })) : null;
+    var canvas = voice ? el("canvas", { class: "wave", "aria-label": "Call waveform" }) : null;
+    var playing = false, btn = null;
+    function setBtn() { if (btn) btn.textContent = playing ? "■ Stop" : "▶ " + (m.channel === "voicemail" ? "Play voicemail" : "Play call"); }
+    function start() {
+      playing = true; setBtn();
+      var prefer = m.from.id === "chief" ? window.ChiefCalls.CHIEF.prefer : (AR.byId(m.from.id) || {}).prefer;
+      CA.play(m, {
+        canvas: canvas, prefer: prefer, silent: !soundOn,
+        onChunk: function (i) { var all = transcript.querySelectorAll(".tchunk"); for (var k = 0; k < all.length; k += 1) all[k].className = "tchunk" + (k < i ? " said" : k === i ? " now" : ""); },
+        onEnd: function () { playing = false; setBtn(); var all = transcript.querySelectorAll(".tchunk"); for (var k = 0; k < all.length; k += 1) all[k].className = "tchunk said"; }
+      });
+    }
+    if (voice) btn = el("button", { class: "btn pink", style: "margin:8px 0", on: { click: function () { if (playing) { CA.stop(); playing = false; setBtn(); } else start(); } } });
+    setBtn();
+    openLayer(el("div", { class: "sheet" }, [
+      el("div", { class: "row", style: "justify-content:space-between" }, [
+        el("div", null, [el("div", { class: "mute" }, CH_ICON[m.channel] + " " + CH_LABEL[m.channel].replace(/s$/, "") + " · " + ago(m.at) + " ago"), el("h1", { style: "margin:2px 0" }, (m.from.id === "chief" ? "🎖️ " : m.from.badge ? m.from.badge + " " : "") + m.from.name)]),
+        el("button", { class: "btn", on: { click: function () { CA.stop(); closeLayer(); render(); } } }, "Close")
+      ]),
+      el("div", { class: "mute" }, m.subject),
+      m.reliability && m.reliability !== "confirmed" ? el("div", { class: "row", style: "margin:6px 0" }, [el("span", { class: "rel rel-" + m.reliability }, REL_LABEL[m.reliability] + " source"), m.hint ? el("span", { class: "hintline" }, m.hint) : null]) : null,
+      voice ? [btn, canvas, transcript] : el("p", { class: "mbodytxt" }, m.body),
+      m.visual && m.visual.kind === "note" ? el("div", { class: "notewrap" }, [el("div", { class: "mute" }, "A crumpled note came with it:"), CN.render(m.visual.note)]) : null
+    ]));
+    if (m.from.id === "chief" && m.channel === "call" && m.state === "read" && !m.__played) m.__played = true;
+  }
+  var ringEl = null;
+  function checkIncoming(first) {
+    CE.allComms(state).forEach(function (m) {
+      if (m.channel !== "call" || m.state !== "new" || view.ringed[m.id]) return;
+      view.ringed[m.id] = true;
+      if (first) return;                                  // calls already waiting at start-up just sit in the inbox
+      if (soundOn) CA.chime(m.from.id === "chief" ? "chief" : "agent");
+      showRing(m);
+    });
+  }
+  function showRing(m) {
+    if (ringEl) ringEl.remove();
+    var who = (m.from.id === "chief" ? "🎖️ " : m.from.badge ? m.from.badge + " " : "") + m.from.name;
+    ringEl = el("div", { class: "ring", role: "alert" }, [
+      el("div", { class: "ring-t" }, ["📞 Incoming call", el("b", null, who)]),
+      el("button", { class: "btn pink", on: { click: function () { ringEl.remove(); ringEl = null; openComm(m); setTimeout(function () { var b = document.querySelector(".sheet .btn.pink"); if (b) b.click(); }, 50); } } }, "Answer"),
+      el("button", { class: "btn", on: { click: function () { ringEl.remove(); ringEl = null; render(); } } }, "Later")
+    ]);
+    document.body.appendChild(ringEl);
+    setTimeout(function () { if (ringEl === ringEl && ringEl && ringEl.parentNode) { ringEl.remove(); ringEl = null; } }, 20000);
+  }
+
   function renderLabs() {
     var out = SLOTS.list().map(function (s) {
       return el("div", { class: "cand" }, [
@@ -557,6 +637,7 @@
   // ------------------------------------------------------------------ live loop
   function liveUpdate() {
     runTick(false);
+    checkIncoming(false);
     var c = curCase();
     if (c) { var old = document.querySelector("[data-pace]"); if (old) old.replaceWith(paceChip(c)); }
     document.querySelectorAll("[data-eta]").forEach(function (n) {
@@ -569,6 +650,7 @@
     initMap();
     state = CE.load(ctx());
     CE.syncRoster(state, ctx());
+    checkIncoming(true);
     runTick(true); save(); render();
     setInterval(liveUpdate, 1000);
     document.addEventListener("visibilitychange", function () { if (!document.hidden) runTick(false); });

@@ -111,3 +111,25 @@ h1, h2 { margin:0 0 6px; } h2 { font-size:17px; } h1 { font-size:22px; }
 /* world view: hide crowded city names, keep the ones that matter */
 .cm-far .cm-lbl { display:none; } .cm-far .cm-onroute .cm-lbl, .cm-far .cm-chosen .cm-lbl, .cm-far .cm-hq .cm-lbl { display:block; }
 .cm-agents, .cm-agent, .cm-pings, .cm-tracks { pointer-events:none; }
+
+/* comms inbox (Step 3) - all tap targets 44px+ */
+.badge-n { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 6px; margin-left:6px; border-radius:10px; background:var(--pink); color:#14102B; font-size:12px; font-weight:900; }
+.mrow { display:grid; grid-template-columns:36px 1fr auto; gap:8px; align-items:center; width:100%; min-height:56px; padding:8px 10px; margin-bottom:6px; border-radius:14px; border:1px solid var(--line); background:var(--card); text-align:left; }
+.mrow.unread { border-left:5px solid var(--pink); background:var(--card2); } .mico { font-size:24px; text-align:center; }
+.mbody { display:flex; flex-direction:column; min-width:0; } .mbody b { font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .mbody .mute { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mmeta { display:flex; flex-direction:column; align-items:flex-end; gap:4px; font-size:11px; color:var(--mute); }
+.rel { display:inline-block; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:800; } .rel-witness { background:#3A3010; color:var(--gold); } .rel-rumour { background:#40222E; color:var(--red); } .rel-confirmed { background:#17402F; color:var(--mint); }
+.hintline { font-style:italic; color:var(--mute); font-size:13px; }
+.wave { display:block; width:100%; height:64px; border-radius:12px; background:#100C24; border:1px solid var(--line); }
+.transcript { margin-top:10px; line-height:1.6; font-size:16px; } .tchunk { color:var(--mute); } .tchunk.now { color:var(--gold); font-weight:800; } .tchunk.said { color:var(--ink); }
+.mbodytxt { font-size:16px; line-height:1.5; }
+.ring { position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:40; display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:18px; background:var(--card2); border:2px solid var(--pink); box-shadow:0 8px 24px rgba(0,0,0,.55); animation:ringp 1s ease-in-out infinite; }
+.ring-t { display:flex; flex-direction:column; font-size:12px; color:var(--mute); } .ring-t b { font-size:16px; color:var(--ink); }
+@keyframes ringp { 50% { box-shadow:0 0 0 6px rgba(255,95,162,.25); } }
+@media (prefers-reduced-motion:reduce) { .ring { animation:none; } }
+.notewrap { margin-top:12px; } .note { position:relative; margin:10px auto; padding:16px 18px; max-width:340px; border-radius:6px 10px 5px 12px; box-shadow:0 6px 14px rgba(0,0,0,.45); }
+.note-folds { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; } .note-folds line { stroke:rgba(0,0,0,.18); stroke-width:.6; }
+.note-text { position:relative; font:italic 600 19px/1.5 "Segoe Print","Bradley Hand","Comic Sans MS",cursive; } .note-line span { display:inline-block; } .note-line .blot { opacity:.55; letter-spacing:-1px; }
+.note-flavour { margin-top:8px; font-size:14px; opacity:.7; transform:rotate(-2deg); }
+.seg button { position:relative; }
+.chipbtn { padding:0 10px; font-size:12px; } .row > .chipbtn .badge-n { margin-left:4px; }
